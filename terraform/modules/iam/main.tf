@@ -41,11 +41,11 @@ resource "aws_iam_openid_connect_provider" "eks" {
 module "cluster_autoscaler_role" {
   source = "./irsa"
 
-  role_name                     = "${var.cluster_name}-cluster-autoscaler"
-  oidc_provider_arn             = aws_iam_openid_connect_provider.eks.arn
-  oidc_provider_url             = var.cluster_oidc_issuer_url
-  service_account_name          = "cluster-autoscaler"
-  service_account_namespace     = "kube-system"
+  role_name                 = "${var.cluster_name}-cluster-autoscaler"
+  oidc_provider_arn         = aws_iam_openid_connect_provider.eks.arn
+  oidc_provider_url         = var.cluster_oidc_issuer_url
+  service_account_name      = "cluster-autoscaler"
+  service_account_namespace = "kube-system"
 
   policy_arns = []
 
@@ -91,11 +91,11 @@ module "cluster_autoscaler_role" {
 module "aws_load_balancer_controller_role" {
   source = "./irsa"
 
-  role_name                     = "${var.cluster_name}-aws-lb-controller"
-  oidc_provider_arn             = aws_iam_openid_connect_provider.eks.arn
-  oidc_provider_url             = var.cluster_oidc_issuer_url
-  service_account_name          = "aws-load-balancer-controller"
-  service_account_namespace     = "kube-system"
+  role_name                 = "${var.cluster_name}-aws-lb-controller"
+  oidc_provider_arn         = aws_iam_openid_connect_provider.eks.arn
+  oidc_provider_url         = var.cluster_oidc_issuer_url
+  service_account_name      = "aws-load-balancer-controller"
+  service_account_namespace = "kube-system"
 
   policy_arns = []
 
@@ -354,11 +354,11 @@ module "aws_load_balancer_controller_role" {
 module "external_secrets_role" {
   source = "./irsa"
 
-  role_name                     = "${var.cluster_name}-external-secrets"
-  oidc_provider_arn             = aws_iam_openid_connect_provider.eks.arn
-  oidc_provider_url             = var.cluster_oidc_issuer_url
-  service_account_name          = "external-secrets"
-  service_account_namespace     = "external-secrets"
+  role_name                 = "${var.cluster_name}-external-secrets"
+  oidc_provider_arn         = aws_iam_openid_connect_provider.eks.arn
+  oidc_provider_url         = var.cluster_oidc_issuer_url
+  service_account_name      = "external-secrets"
+  service_account_namespace = "external-secrets"
 
   policy_arns = []
 
@@ -397,11 +397,11 @@ module "external_secrets_role" {
 module "cert_manager_role" {
   source = "./irsa"
 
-  role_name                     = "${var.cluster_name}-cert-manager"
-  oidc_provider_arn             = aws_iam_openid_connect_provider.eks.arn
-  oidc_provider_url             = var.cluster_oidc_issuer_url
-  service_account_name          = "cert-manager"
-  service_account_namespace     = "cert-manager"
+  role_name                 = "${var.cluster_name}-cert-manager"
+  oidc_provider_arn         = aws_iam_openid_connect_provider.eks.arn
+  oidc_provider_url         = var.cluster_oidc_issuer_url
+  service_account_name      = "cert-manager"
+  service_account_namespace = "cert-manager"
 
   policy_arns = []
 
@@ -445,11 +445,11 @@ module "cert_manager_role" {
 module "external_dns_role" {
   source = "./irsa"
 
-  role_name                     = "${var.cluster_name}-external-dns"
-  oidc_provider_arn             = aws_iam_openid_connect_provider.eks.arn
-  oidc_provider_url             = var.cluster_oidc_issuer_url
-  service_account_name          = "external-dns"
-  service_account_namespace     = "external-dns"
+  role_name                 = "${var.cluster_name}-external-dns"
+  oidc_provider_arn         = aws_iam_openid_connect_provider.eks.arn
+  oidc_provider_url         = var.cluster_oidc_issuer_url
+  service_account_name      = "external-dns"
+  service_account_namespace = "external-dns"
 
   policy_arns = []
 
@@ -486,11 +486,11 @@ module "external_dns_role" {
 module "ebs_csi_controller_role" {
   source = "./irsa"
 
-  role_name                     = "${var.cluster_name}-ebs-csi-controller"
-  oidc_provider_arn             = aws_iam_openid_connect_provider.eks.arn
-  oidc_provider_url             = var.cluster_oidc_issuer_url
-  service_account_name          = "ebs-csi-controller-sa"
-  service_account_namespace     = "kube-system"
+  role_name                 = "${var.cluster_name}-ebs-csi-controller"
+  oidc_provider_arn         = aws_iam_openid_connect_provider.eks.arn
+  oidc_provider_url         = var.cluster_oidc_issuer_url
+  service_account_name      = "ebs-csi-controller-sa"
+  service_account_namespace = "kube-system"
 
   policy_arns = [
     "arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy"
@@ -508,11 +508,11 @@ module "ebs_csi_controller_role" {
 module "fluent_bit_role" {
   source = "./irsa"
 
-  role_name                     = "${var.cluster_name}-fluent-bit"
-  oidc_provider_arn             = aws_iam_openid_connect_provider.eks.arn
-  oidc_provider_url             = var.cluster_oidc_issuer_url
-  service_account_name          = "fluent-bit"
-  service_account_namespace     = "amazon-cloudwatch"
+  role_name                 = "${var.cluster_name}-fluent-bit"
+  oidc_provider_arn         = aws_iam_openid_connect_provider.eks.arn
+  oidc_provider_url         = var.cluster_oidc_issuer_url
+  service_account_name      = "fluent-bit"
+  service_account_namespace = "amazon-cloudwatch"
 
   policy_arns = []
 
@@ -545,11 +545,11 @@ module "fluent_bit_role" {
 module "grafana_role" {
   source = "./irsa"
 
-  role_name                     = "${var.cluster_name}-grafana"
-  oidc_provider_arn             = aws_iam_openid_connect_provider.eks.arn
-  oidc_provider_url             = var.cluster_oidc_issuer_url
-  service_account_name          = "grafana"
-  service_account_namespace     = "observability"
+  role_name                 = "${var.cluster_name}-grafana"
+  oidc_provider_arn         = aws_iam_openid_connect_provider.eks.arn
+  oidc_provider_url         = var.cluster_oidc_issuer_url
+  service_account_name      = "grafana"
+  service_account_namespace = "observability"
 
   policy_arns = []
 
@@ -612,11 +612,11 @@ module "grafana_role" {
 module "xray_daemon_role" {
   source = "./irsa"
 
-  role_name                     = "${var.cluster_name}-xray-daemon"
-  oidc_provider_arn             = aws_iam_openid_connect_provider.eks.arn
-  oidc_provider_url             = var.cluster_oidc_issuer_url
-  service_account_name          = "xray-daemon"
-  service_account_namespace     = "amazon-cloudwatch"
+  role_name                 = "${var.cluster_name}-xray-daemon"
+  oidc_provider_arn         = aws_iam_openid_connect_provider.eks.arn
+  oidc_provider_url         = var.cluster_oidc_issuer_url
+  service_account_name      = "xray-daemon"
+  service_account_namespace = "amazon-cloudwatch"
 
   policy_arns = [
     "arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess"
@@ -634,11 +634,11 @@ module "xray_daemon_role" {
 module "cloudwatch_agent_role" {
   source = "./irsa"
 
-  role_name                     = "${var.cluster_name}-cloudwatch-agent"
-  oidc_provider_arn             = aws_iam_openid_connect_provider.eks.arn
-  oidc_provider_url             = var.cluster_oidc_issuer_url
-  service_account_name          = "cloudwatch-agent"
-  service_account_namespace     = "amazon-cloudwatch"
+  role_name                 = "${var.cluster_name}-cloudwatch-agent"
+  oidc_provider_arn         = aws_iam_openid_connect_provider.eks.arn
+  oidc_provider_url         = var.cluster_oidc_issuer_url
+  service_account_name      = "cloudwatch-agent"
+  service_account_namespace = "amazon-cloudwatch"
 
   policy_arns = [
     "arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy"

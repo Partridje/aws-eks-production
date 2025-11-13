@@ -42,10 +42,10 @@ locals {
 module "vpc" {
   source = "../../modules/vpc"
 
-  cluster_name              = local.cluster_name
-  vpc_cidr                  = var.vpc_cidr
-  aws_region                = var.aws_region
-  flow_logs_retention_days  = 7
+  cluster_name             = local.cluster_name
+  vpc_cidr                 = var.vpc_cidr
+  aws_region               = var.aws_region
+  flow_logs_retention_days = 7
 
   tags = local.tags
 }
@@ -109,10 +109,10 @@ module "iam" {
 module "rds" {
   source = "../../modules/rds"
 
-  cluster_name                = local.cluster_name
-  vpc_id                      = module.vpc.vpc_id
-  db_subnet_group_name        = module.vpc.database_subnet_group_name
-  eks_node_security_group_id  = module.eks.node_security_group_id
+  cluster_name               = local.cluster_name
+  vpc_id                     = module.vpc.vpc_id
+  db_subnet_group_name       = module.vpc.database_subnet_group_name
+  eks_node_security_group_id = module.eks.node_security_group_id
 
   db_name     = "appdb"
   db_username = "dbadmin"
@@ -188,13 +188,13 @@ output "cloudwatch_dashboard_url" {
 output "iam_role_arns" {
   description = "IAM Role ARNs for IRSA"
   value = {
-    cluster_autoscaler         = module.iam.cluster_autoscaler_role_arn
+    cluster_autoscaler           = module.iam.cluster_autoscaler_role_arn
     aws_load_balancer_controller = module.iam.aws_load_balancer_controller_role_arn
-    external_secrets           = module.iam.external_secrets_role_arn
-    cert_manager               = module.iam.cert_manager_role_arn
-    external_dns               = module.iam.external_dns_role_arn
-    fluent_bit                 = module.iam.fluent_bit_role_arn
-    grafana                    = module.iam.grafana_role_arn
-    xray_daemon                = module.iam.xray_daemon_role_arn
+    external_secrets             = module.iam.external_secrets_role_arn
+    cert_manager                 = module.iam.cert_manager_role_arn
+    external_dns                 = module.iam.external_dns_role_arn
+    fluent_bit                   = module.iam.fluent_bit_role_arn
+    grafana                      = module.iam.grafana_role_arn
+    xray_daemon                  = module.iam.xray_daemon_role_arn
   }
 }

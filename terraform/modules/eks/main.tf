@@ -277,15 +277,15 @@ resource "aws_eks_node_group" "on_demand" {
   capacity_type  = "ON_DEMAND"
 
   labels = {
-    role         = "on-demand"
-    node-type    = "on-demand"
-    workload     = "general"
+    role      = "on-demand"
+    node-type = "on-demand"
+    workload  = "general"
   }
 
   tags = merge(
     var.tags,
     {
-      Name = "${var.cluster_name}-on-demand"
+      Name                                            = "${var.cluster_name}-on-demand"
       "k8s.io/cluster-autoscaler/${var.cluster_name}" = "owned"
       "k8s.io/cluster-autoscaler/enabled"             = "true"
     }
@@ -330,15 +330,15 @@ resource "aws_eks_node_group" "spot" {
   capacity_type  = "SPOT"
 
   labels = {
-    role         = "spot"
-    node-type    = "spot"
-    workload     = "general"
+    role      = "spot"
+    node-type = "spot"
+    workload  = "general"
   }
 
   tags = merge(
     var.tags,
     {
-      Name = "${var.cluster_name}-spot"
+      Name                                            = "${var.cluster_name}-spot"
       "k8s.io/cluster-autoscaler/${var.cluster_name}" = "owned"
       "k8s.io/cluster-autoscaler/enabled"             = "true"
     }
@@ -364,9 +364,9 @@ resource "aws_eks_node_group" "spot" {
 
 # VPC CNI
 resource "aws_eks_addon" "vpc_cni" {
-  cluster_name             = aws_eks_cluster.main.name
-  addon_name               = "vpc-cni"
-  addon_version            = var.vpc_cni_version
+  cluster_name                = aws_eks_cluster.main.name
+  addon_name                  = "vpc-cni"
+  addon_version               = var.vpc_cni_version
   resolve_conflicts_on_create = "OVERWRITE"
   resolve_conflicts_on_update = "PRESERVE"
 
@@ -375,9 +375,9 @@ resource "aws_eks_addon" "vpc_cni" {
 
 # CoreDNS
 resource "aws_eks_addon" "coredns" {
-  cluster_name             = aws_eks_cluster.main.name
-  addon_name               = "coredns"
-  addon_version            = var.coredns_version
+  cluster_name                = aws_eks_cluster.main.name
+  addon_name                  = "coredns"
+  addon_version               = var.coredns_version
   resolve_conflicts_on_create = "OVERWRITE"
   resolve_conflicts_on_update = "PRESERVE"
 
@@ -391,9 +391,9 @@ resource "aws_eks_addon" "coredns" {
 
 # kube-proxy
 resource "aws_eks_addon" "kube_proxy" {
-  cluster_name             = aws_eks_cluster.main.name
-  addon_name               = "kube-proxy"
-  addon_version            = var.kube_proxy_version
+  cluster_name                = aws_eks_cluster.main.name
+  addon_name                  = "kube-proxy"
+  addon_version               = var.kube_proxy_version
   resolve_conflicts_on_create = "OVERWRITE"
   resolve_conflicts_on_update = "PRESERVE"
 
@@ -402,10 +402,10 @@ resource "aws_eks_addon" "kube_proxy" {
 
 # EBS CSI Driver
 resource "aws_eks_addon" "ebs_csi" {
-  cluster_name             = aws_eks_cluster.main.name
-  addon_name               = "aws-ebs-csi-driver"
-  addon_version            = var.ebs_csi_version
-  service_account_role_arn = var.ebs_csi_controller_role_arn
+  cluster_name                = aws_eks_cluster.main.name
+  addon_name                  = "aws-ebs-csi-driver"
+  addon_version               = var.ebs_csi_version
+  service_account_role_arn    = var.ebs_csi_controller_role_arn
   resolve_conflicts_on_create = "OVERWRITE"
   resolve_conflicts_on_update = "PRESERVE"
 
@@ -414,10 +414,10 @@ resource "aws_eks_addon" "ebs_csi" {
 
 # Amazon CloudWatch Observability (Container Insights)
 resource "aws_eks_addon" "cloudwatch_observability" {
-  cluster_name             = aws_eks_cluster.main.name
-  addon_name               = "amazon-cloudwatch-observability"
-  addon_version            = var.cloudwatch_observability_version
-  service_account_role_arn = var.cloudwatch_agent_role_arn
+  cluster_name                = aws_eks_cluster.main.name
+  addon_name                  = "amazon-cloudwatch-observability"
+  addon_version               = var.cloudwatch_observability_version
+  service_account_role_arn    = var.cloudwatch_agent_role_arn
   resolve_conflicts_on_create = "OVERWRITE"
   resolve_conflicts_on_update = "PRESERVE"
 
