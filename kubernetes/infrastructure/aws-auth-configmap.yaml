@@ -1,0 +1,60 @@
+# AWS Auth ConfigMap
+# Maps IAM roles/users to Kubernetes RBAC groups
+#
+# IMPORTANT: Apply this AFTER cluster creation
+# kubectl apply -f kubernetes/infrastructure/aws-auth-configmap.yaml
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: aws-auth
+  namespace: kube-system
+data:
+  mapRoles: |
+    # EKS Node IAM Role (required for nodes to join cluster)
+    - rolearn: arn:aws:iam::ACCOUNT_ID:role/eks-prod-dev-node-role
+      username: system:node:{{EC2PrivateDNSName}}
+      groups:
+        - system:bootstrappers
+        - system:nodes
+
+    # EKS Admin Role - Full cluster access
+    - rolearn: arn:aws:iam::ACCOUNT_ID:role/eks-prod-dev-admin-role
+      username: eks-admin
+      groups:
+        - system:masters
+
+    # EKS Developer Role - Namespace scoped access
+    - rolearn: arn:aws:iam::ACCOUNT_ID:role/eks-prod-dev-developer-role
+      username: eks-developer
+      groups:
+        - developers
+
+    # EKS Viewer Role - Read-only access
+    - rolearn: arn:aws:iam::ACCOUNT_ID:role/eks-prod-dev-viewer-role
+      username: eks-viewer
+      groups:
+        - viewers
+
+  mapUsers: |
+    # Example: Map specific IAM users to Kubernetes
+    # Uncomment and replace with your IAM users
+    #
+    # - userarn: arn:aws:iam::ACCOUNT_ID:user/alice
+    #   username: alice
+    #   groups:
+    #     - system:masters
+    #
+    # - userarn: arn:aws:iam::ACCOUNT_ID:user/bob
+    #   username: bob
+    #   groups:
+    #     - developers
+    #
+    # - userarn: arn:aws:iam::ACCOUNT_ID:user/charlie
+    #   username: charlie
+    #   groups:
+    #     - viewers
+
+  # OPTIONAL: Map AWS SSO roles (if using AWS SSO)
+  # mapAccounts: |
+  #   - "123456789012"  # Allow entire AWS account

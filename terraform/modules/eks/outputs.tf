@@ -52,3 +52,19 @@ output "spot_node_group_id" {
   description = "Spot node group ID"
   value       = aws_eks_node_group.spot.id
 }
+
+# RBAC IAM Role ARNs
+output "admin_role_arn" {
+  description = "ARN of the EKS admin IAM role"
+  value       = aws_iam_role.eks_admin.arn
+}
+
+output "developer_role_arn" {
+  description = "ARN of the EKS developer IAM role"
+  value       = aws_iam_role.eks_developer.arn
+}
+
+output "viewer_role_arn" {
+  description = "ARN of the EKS viewer IAM role"
+  value       = aws_iam_role.eks_viewer.arn
+}
