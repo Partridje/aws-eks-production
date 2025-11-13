@@ -178,6 +178,39 @@ kubectl get pods -n amazon-cloudwatch
 # Navigate to: CloudWatch > Container Insights > Performance monitoring
 ```
 
+### 7. Configure RBAC (Role-Based Access Control)
+
+Setup user access to the cluster:
+
+```bash
+# Get your AWS account ID
+AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+
+# Update aws-auth ConfigMap with your account ID
+sed -i "s/ACCOUNT_ID/${AWS_ACCOUNT_ID}/g" kubernetes/infrastructure/aws-auth-configmap.yaml
+
+# Apply aws-auth ConfigMap (maps IAM roles to Kubernetes groups)
+kubectl apply -f kubernetes/infrastructure/aws-auth-configmap.yaml
+
+# Apply Kubernetes RBAC roles
+kubectl apply -f kubernetes/security/rbac/developer-role.yaml
+kubectl apply -f kubernetes/security/rbac/viewer-role.yaml
+```
+
+**Use helper script to assume roles:**
+```bash
+# Become admin
+./scripts/assume-eks-role.sh admin
+
+# Become developer
+./scripts/assume-eks-role.sh developer
+
+# Become viewer
+./scripts/assume-eks-role.sh viewer
+```
+
+See [docs/RBAC_SETUP.md](docs/RBAC_SETUP.md) for detailed RBAC configuration.
+
 ## Accessing Services
 
 ### Grafana
