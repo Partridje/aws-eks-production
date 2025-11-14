@@ -88,7 +88,7 @@ jobs:
         with:
           role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/github-actions-terraform
           aws-region: ${{ env.AWS_REGION }}
-          role-session-name: GitHubActions-Terraform-Apply-${{ matrix.environment }}
+          role-session-name: GHA-Terraform-Apply-${{ github.run_id }}
 
       - name: Cache Terraform providers
         uses: actions/cache@v4
@@ -204,7 +204,7 @@ jobs:
         with:
           role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/github-actions-terraform
           aws-region: ${{ env.AWS_REGION }}
-          role-session-name: GitHubActions-Terraform-Apply-${{ matrix.environment }}
+          role-session-name: GHA-Terraform-Apply-${{ github.run_id }}
 
       - name: Cache Terraform providers
         uses: actions/cache@v4

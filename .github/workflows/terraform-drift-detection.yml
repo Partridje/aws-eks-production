@@ -40,7 +40,7 @@ jobs:
         with:
           role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/github-actions-terraform
           aws-region: ${{ env.AWS_REGION }}
-          role-session-name: GitHubActions-DriftDetection-${{ matrix.environment }}
+          role-session-name: GHA-DriftDetection-${{ github.run_id }}
 
       - name: Cache Terraform providers
         uses: actions/cache@v4
