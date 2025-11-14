@@ -88,11 +88,18 @@ jobs:
             echo "has_drift=false" >> $GITHUB_OUTPUT
           fi
 
+      - name: Set artifact name
+        if: steps.drift.outputs.has_drift == 'true'
+        id: artifact
+        run: |
+          ENV_NAME=$(echo "${{ matrix.environment }}" | tr '/' '-')
+          echo "name=drift-plan-${ENV_NAME}" >> $GITHUB_OUTPUT
+
       - name: Upload drift plan
         if: steps.drift.outputs.has_drift == 'true'
         uses: actions/upload-artifact@v4
         with:
-          name: drift-plan-${{ replace(matrix.environment, '/', '-') }}
+          name: ${{ steps.artifact.outputs.name }}
           path: |
             terraform/environments/${{ matrix.environment }}/drift.tfplan
             terraform/environments/${{ matrix.environment }}/drift.txt

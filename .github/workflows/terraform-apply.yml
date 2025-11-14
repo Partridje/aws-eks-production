@@ -122,10 +122,16 @@ jobs:
           cd terraform/environments/${{ matrix.environment }}
           terraform output -json > outputs.json
 
+      - name: Set artifact name
+        id: artifact
+        run: |
+          ENV_NAME=$(echo "${{ matrix.environment }}" | tr '/' '-')
+          echo "name=terraform-outputs-${ENV_NAME}" >> $GITHUB_OUTPUT
+
       - name: Upload outputs
         uses: actions/upload-artifact@v4
         with:
-          name: terraform-outputs-${{ replace(matrix.environment, '/', '-') }}
+          name: ${{ steps.artifact.outputs.name }}
           path: terraform/environments/${{ matrix.environment }}/outputs.json
           retention-days: 30
 
@@ -238,10 +244,16 @@ jobs:
           cd terraform/environments/${{ matrix.environment }}
           terraform output -json > outputs.json
 
+      - name: Set artifact name
+        id: artifact
+        run: |
+          ENV_NAME=$(echo "${{ matrix.environment }}" | tr '/' '-')
+          echo "name=terraform-outputs-${ENV_NAME}" >> $GITHUB_OUTPUT
+
       - name: Upload outputs
         uses: actions/upload-artifact@v4
         with:
-          name: terraform-outputs-${{ replace(matrix.environment, '/', '-') }}
+          name: ${{ steps.artifact.outputs.name }}
           path: terraform/environments/${{ matrix.environment }}/outputs.json
           retention-days: 90
 

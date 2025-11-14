@@ -243,10 +243,16 @@ jobs:
           terraform show -json tfplan > plan.json
         continue-on-error: true
 
+      - name: Set artifact name
+        id: artifact
+        run: |
+          ENV_NAME=$(echo "${{ matrix.environment }}" | tr '/' '-')
+          echo "name=terraform-plan-${ENV_NAME}" >> $GITHUB_OUTPUT
+
       - name: Upload plan artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: terraform-plan-${{ replace(matrix.environment, '/', '-') }}
+          name: ${{ steps.artifact.outputs.name }}
           path: |
             terraform/environments/${{ matrix.environment }}/tfplan
             terraform/environments/${{ matrix.environment }}/plan.json
@@ -325,10 +331,16 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Set artifact name
+        id: artifact
+        run: |
+          ENV_NAME=$(echo "${{ matrix.environment }}" | tr '/' '-')
+          echo "name=terraform-plan-${ENV_NAME}" >> $GITHUB_OUTPUT
+
       - name: Download plan artifact
         uses: actions/download-artifact@v4
         with:
-          name: terraform-plan-${{ replace(matrix.environment, '/', '-') }}
+          name: ${{ steps.artifact.outputs.name }}
           path: terraform/environments/${{ matrix.environment }}/
 
       - name: Setup Infracost
