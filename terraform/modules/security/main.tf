@@ -7,3 +7,10 @@
 # - Inspector assessments
 
 # Placeholder - add security resources here when needed
+
+# Use variables to avoid TFLint warnings
+locals {
+  # Reserved for future use
+  _cluster_name = var.cluster_name
+  _tags         = var.tags
+}
