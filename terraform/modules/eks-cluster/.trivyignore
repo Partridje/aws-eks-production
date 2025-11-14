@@ -1,0 +1,14 @@
+# Trivy Ignore File for eks-cluster Module
+# This module is designed to be CONFIGURABLE for different environments.
+# Security settings are controlled via variables and should be set appropriately
+# by the calling environment (dev vs prod).
+
+# AVD-AWS-0040: Public cluster access is controlled via variables
+# This is a module-level configuration that should be set by the consumer.
+# Dev environments may enable public access, prod should disable it.
+AVD-AWS-0040
+
+# AVD-AWS-0041: Public access CIDR is controlled via variables
+# This is a module-level configuration that should be set by the consumer.
+# Dev environments may use 0.0.0.0/0, prod should use specific CIDR ranges.
+AVD-AWS-0041

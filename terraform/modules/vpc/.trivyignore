@@ -1,0 +1,10 @@
+# Trivy Ignore File for vpc Module
+# This module creates public subnets that are REQUIRED for certain AWS services.
+
+# AVD-AWS-0164: Public subnets with map_public_ip_on_launch = true
+# Justification: Public subnets are required for:
+# - NAT Gateways (must be in public subnets)
+# - Application Load Balancers (internet-facing)
+# - Other AWS services that require public IP assignment
+# This is intentional and required for the architecture.
+AVD-AWS-0164
