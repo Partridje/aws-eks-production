@@ -78,7 +78,3 @@ rule "aws_db_instance_invalid_type" {
 rule "aws_iam_policy_document_gov_friendly_arns" {
   enabled = false  # Not applicable for non-gov regions
 }
-
-rule "aws_iam_role_policy_too_long" {
-  enabled = true
-}

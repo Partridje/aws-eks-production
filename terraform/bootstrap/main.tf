@@ -179,7 +179,6 @@ resource "aws_dynamodb_table" "terraform_locks" {
 # Data Sources
 ################################################################################
 
-data "aws_caller_identity" "current" {}
 data "aws_canonical_user_id" "current" {}
 
 ################################################################################
