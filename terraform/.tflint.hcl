@@ -2,8 +2,8 @@
 # https://github.com/terraform-linters/tflint
 
 config {
-  module     = true
-  force      = false
+  call_module_type    = "all"
+  force               = false
   disabled_by_default = false
 }
 
