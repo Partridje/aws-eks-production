@@ -18,9 +18,9 @@ exclude:
 # Exclude specific files or directories
 exclude_paths:
   - .terraform/**
-  - **/.terraform/**
-  - terraform/modules/**/*.example.tf
-  - terraform/environments/**/terraform.tfvars
+  - "**/.terraform/**"
+  - "terraform/modules/**/*.example.tf"
+  - "terraform/environments/**/terraform.tfvars"
 
 # Custom check configuration
 checks:
