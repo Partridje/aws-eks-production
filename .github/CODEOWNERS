@@ -1,0 +1,79 @@
+# Code Owners for aws-eks-production
+#
+# These owners will be automatically requested for review when someone opens
+# a pull request that modifies code in the specified paths.
+#
+# More info: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+###############################################################################
+# Global Owners
+###############################################################################
+
+# Default owners for everything in the repo
+* @Partridje
+
+###############################################################################
+# Infrastructure Code
+###############################################################################
+
+# All Terraform code
+/terraform/ @Partridje
+
+# VPC module - Network team
+/terraform/modules/vpc/ @Partridje
+
+# IAM module - Security team
+/terraform/modules/iam-eks/ @Partridje
+
+# EKS cluster module - Platform team
+/terraform/modules/eks-cluster/ @Partridje
+
+###############################################################################
+# Environments
+###############################################################################
+
+# Development environment - Platform team
+/terraform/environments/dev/ @Partridje
+
+# Production environment - Requires Platform Lead + Security approval
+/terraform/environments/prod/ @Partridje
+
+###############################################################################
+# CI/CD and Workflows
+###############################################################################
+
+# GitHub Actions workflows
+/.github/workflows/ @Partridje
+
+# Pre-commit configuration
+/.pre-commit-config.yaml @Partridje
+
+# Linter configurations
+/.tflint.hcl @Partridje
+/.tfsec.yml @Partridje
+
+###############################################################################
+# Documentation
+###############################################################################
+
+# Main README
+/README.md @Partridje
+
+# Module documentation
+/terraform/modules/*/README.md @Partridje
+
+# Security and setup guides
+/.github/*.md @Partridje
+
+###############################################################################
+# Security-Critical Files
+###############################################################################
+
+# Backend configuration (state management)
+/terraform/**/backend.tf @Partridje
+
+# IAM policies and roles
+/terraform/modules/iam-eks/*.tf @Partridje
+
+# Security groups
+/terraform/modules/*/security*.tf @Partridje
