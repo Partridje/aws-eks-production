@@ -146,6 +146,7 @@ module "rbac" {
   source = "../../modules/rbac"
 
   cluster_name = local.cluster_name
+  cluster_arn  = module.eks.cluster_arn
   tags         = local.tags
 
   depends_on = [module.eks]

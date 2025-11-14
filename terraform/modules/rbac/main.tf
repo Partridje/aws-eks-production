@@ -116,7 +116,7 @@ resource "aws_iam_policy" "eks_access" {
           "eks:DescribeCluster",
           "eks:ListClusters"
         ]
-        Resource = aws_eks_cluster.main.arn
+        Resource = var.cluster_arn
       }
     ]
   })

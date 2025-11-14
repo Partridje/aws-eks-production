@@ -3,6 +3,11 @@ variable "cluster_name" {
   type        = string
 }
 
+variable "cluster_arn" {
+  description = "ARN of the EKS cluster"
+  type        = string
+}
+
 variable "tags" {
   description = "Tags to apply to all resources"
   type        = map(string)
