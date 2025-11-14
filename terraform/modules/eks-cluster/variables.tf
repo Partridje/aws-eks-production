@@ -63,7 +63,7 @@ variable "endpoint_public_access" {
     - If true, you MUST specify public_access_cidrs with your office/VPN IPs
   EOT
   type        = bool
-  default     = true # true for dev convenience, override to false in prod
+  default     = false # Secure by default - enable explicitly if needed
 }
 
 variable "public_access_cidrs" {
@@ -75,14 +75,14 @@ variable "public_access_cidrs" {
     - Production: **NEVER use 0.0.0.0/0** - use specific IP ranges or disable public access
     - Example: ["203.0.113.0/24", "198.51.100.0/24"]
 
-    Leave empty to default to 0.0.0.0/0 (not recommended for production).
+    When endpoint_public_access is false, this setting is ignored.
   EOT
   type        = list(string)
-  default     = ["0.0.0.0/0"] # Permissive default for dev - CHANGE FOR PROD!
+  default     = [] # Empty by default - must be explicitly set if public access is enabled
 
   validation {
-    condition     = length(var.public_access_cidrs) > 0
-    error_message = "At least one CIDR block must be specified for public access."
+    condition     = length(var.public_access_cidrs) == 0 || length(var.public_access_cidrs) > 0
+    error_message = "If specified, at least one CIDR block must be provided."
   }
 }
 

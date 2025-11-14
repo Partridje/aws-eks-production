@@ -47,15 +47,25 @@ variable "endpoint_private_access" {
 }
 
 variable "endpoint_public_access" {
-  description = "Enable public API server endpoint"
+  description = <<-EOT
+    Enable public API server endpoint.
+
+    DEV ENVIRONMENT: Set to true for kubectl access from developer machines.
+    PROD ENVIRONMENT: Should be false (use VPN/bastion for access).
+  EOT
   type        = bool
-  default     = true
+  default     = true # Intentionally enabled for dev - change to false for prod
 }
 
 variable "public_access_cidrs" {
-  description = "List of CIDR blocks for public API access"
+  description = <<-EOT
+    List of CIDR blocks for public API access.
+
+    DEV ENVIRONMENT: 0.0.0.0/0 allows access from anywhere (acceptable for dev/test).
+    PROD ENVIRONMENT: Must specify office/VPN IP ranges, never use 0.0.0.0/0.
+  EOT
   type        = list(string)
-  default     = ["0.0.0.0/0"]
+  default     = ["0.0.0.0/0"] # Intentionally permissive for dev - restrict for prod
 }
 
 ###############################################################################
