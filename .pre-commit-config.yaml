@@ -26,11 +26,12 @@ repos:
         args:
           - --args=--config=__GIT_WORKING_DIR__/.tflint.hcl
 
-      - id: terraform_tfsec
-        name: Terraform tfsec
+      - id: terraform_trivy
+        name: Terraform trivy
         description: Static analysis of Terraform templates for security issues
         args:
-          - --args=--minimum-severity=MEDIUM
+          - --args=--severity=CRITICAL,HIGH
+          - --args=--skip-dirs="**/.terraform"
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.5.0

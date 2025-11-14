@@ -44,12 +44,13 @@ jobs:
           curl -s https://raw.githubusercontent.com/terraform-linters/tflint/master/install_linux.sh | bash
           tflint --version
 
-      - name: Install tfsec
+      - name: Install Trivy
         run: |
-          wget -qO- https://github.com/aquasecurity/tfsec/releases/download/v1.28.5/tfsec-linux-amd64 > /tmp/tfsec
-          chmod +x /tmp/tfsec
-          sudo mv /tmp/tfsec /usr/local/bin/
-          tfsec --version
+          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
+          echo "deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main" | sudo tee -a /etc/apt/sources.list.d/trivy.list
+          sudo apt-get update
+          sudo apt-get install trivy
+          trivy --version
 
       - name: Cache pre-commit hooks
         uses: actions/cache@v4

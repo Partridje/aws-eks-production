@@ -4,8 +4,8 @@
 ###############################################################################
 
 config {
-  # Enable module inspection
-  module = true
+  # Enable module inspection (v0.54.0+)
+  call_module_type = "all"  # all, local, or none
 
   # Force all checks to be enabled
   force = false
