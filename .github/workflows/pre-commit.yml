@@ -64,6 +64,8 @@ jobs:
         run: pip install pre-commit
 
       - name: Run pre-commit hooks
+        env:
+          SKIP: terraform_docs  # Skip terraform_docs in CI (modifies files)
         run: pre-commit run --all-files --show-diff-on-failure
 
       - name: Annotate failures

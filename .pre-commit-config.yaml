@@ -19,7 +19,8 @@ repos:
           - --hook-config=--path-to-file=README.md
           - --hook-config=--add-to-existing-file=true
           - --hook-config=--create-file-if-not-exist=true
-        stages: [commit]  # Only run on local commits, not in CI
+          # Note: This hook modifies files, so it should only run locally
+          # Developers must commit generated docs before pushing
 
       - id: terraform_tflint
         name: Terraform tflint
