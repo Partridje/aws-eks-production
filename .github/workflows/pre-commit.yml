@@ -56,15 +56,12 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.cache/pre-commit
-          key: pre-commit-${{ runner.os }}-${{ hashFiles('.pre-commit-config.yaml') }}
+          key: pre-commit-v2-${{ runner.os }}-${{ hashFiles('.pre-commit-config.yaml', '.terraform-docs.yml') }}
           restore-keys: |
-            pre-commit-${{ runner.os }}-
+            pre-commit-v2-${{ runner.os }}-
 
       - name: Install pre-commit
         run: pip install pre-commit
-
-      - name: Clean pre-commit cache
-        run: pre-commit clean
 
       - name: Run pre-commit hooks
         env:
