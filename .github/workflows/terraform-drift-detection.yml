@@ -92,7 +92,7 @@ jobs:
         if: steps.drift.outputs.has_drift == 'true'
         uses: actions/upload-artifact@v4
         with:
-          name: drift-plan-${{ matrix.environment }}
+          name: drift-plan-${{ replace(matrix.environment, '/', '-') }}
           path: |
             terraform/environments/${{ matrix.environment }}/drift.tfplan
             terraform/environments/${{ matrix.environment }}/drift.txt

@@ -246,7 +246,7 @@ jobs:
       - name: Upload plan artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: terraform-plan-${{ matrix.environment }}
+          name: terraform-plan-${{ replace(matrix.environment, '/', '-') }}
           path: |
             terraform/environments/${{ matrix.environment }}/tfplan
             terraform/environments/${{ matrix.environment }}/plan.json
@@ -328,7 +328,7 @@ jobs:
       - name: Download plan artifact
         uses: actions/download-artifact@v4
         with:
-          name: terraform-plan-${{ matrix.environment }}
+          name: terraform-plan-${{ replace(matrix.environment, '/', '-') }}
           path: terraform/environments/${{ matrix.environment }}/
 
       - name: Setup Infracost
