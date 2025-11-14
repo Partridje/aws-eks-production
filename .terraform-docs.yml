@@ -1,0 +1,33 @@
+# terraform-docs configuration
+# https://terraform-docs.io/user-guide/configuration/
+
+formatter: markdown table
+
+# Only process module directories, not root
+recursive:
+  enabled: true
+  path: terraform/modules
+
+# Output settings
+output:
+  file: README.md
+  mode: inject
+  template: |-
+    <!-- BEGIN_TF_DOCS -->
+    {{ .Content }}
+    <!-- END_TF_DOCS -->
+
+# Sort settings
+sort:
+  enabled: true
+  by: name
+
+sections:
+  hide: []
+  show: []
+
+content: ""
+
+output-values:
+  enabled: false
+  from: ""
