@@ -32,6 +32,7 @@ repos:
         args:
           - --args=--severity=CRITICAL,HIGH
           - --args=--skip-dirs="**/.terraform"
+          - --args=--ignorefile=__GIT_WORKING_DIR__/.trivyignore
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0  # Latest as of 2025

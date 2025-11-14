@@ -1,0 +1,36 @@
+# Trivy Ignore File - DEVELOPMENT ENVIRONMENT ONLY
+#
+# These security findings are INTENTIONALLY ACCEPTED for the dev environment
+# to balance security with developer productivity.
+#
+# ⚠️  DO NOT copy this file to staging or production environments!
+
+###############################################################################
+# EKS Public Access - Development Only
+###############################################################################
+
+# AVD-AWS-0040: Public cluster access is enabled
+# Justification: Dev environment requires kubectl access from developer machines
+# Mitigation: Use VPN or restrict to office IPs in terraform.tfvars for added security
+# Production: MUST set endpoint_public_access = false and use bastion/VPN
+AVD-AWS-0040
+
+# AVD-AWS-0041: Cluster allows access from 0.0.0.0/0
+# Justification: Simplifies developer access without VPN setup
+# Mitigation: Developers can override public_access_cidrs in terraform.tfvars
+# Production: MUST specify restricted CIDR ranges or disable public access
+AVD-AWS-0041
+
+###############################################################################
+# VPC Configuration - Standard Multi-AZ Setup
+###############################################################################
+
+# AVD-AWS-0104: VPC endpoint security group allows egress
+# Justification: VPC endpoints need HTTPS egress to AWS services within VPC
+# This is limited to VPC CIDR, not internet egress
+AVD-AWS-0164
+
+# AVD-AWS-0164: Public subnets with public IP assignment
+# Justification: Required for NAT Gateway and Application Load Balancers
+# Private subnets (where workloads run) do not have public IPs
+AVD-AWS-0164
