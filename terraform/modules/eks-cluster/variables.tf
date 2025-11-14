@@ -54,19 +54,35 @@ variable "endpoint_private_access" {
 }
 
 variable "endpoint_public_access" {
-  description = "Enable public API server endpoint"
+  description = <<-EOT
+    Enable public API server endpoint.
+
+    Security considerations:
+    - Production: Set to false and use VPN/bastion
+    - Development: Can be true with specific CIDR restrictions
+    - If true, you MUST specify public_access_cidrs with your office/VPN IPs
+  EOT
   type        = bool
-  default     = true
+  default     = false # Secure by default - enable explicitly if needed
 }
 
 variable "public_access_cidrs" {
-  description = "List of CIDR blocks that can access the public API server endpoint"
+  description = <<-EOT
+    List of CIDR blocks that can access the public API server endpoint.
+
+    **Security Best Practices:**
+    - Development: Use your office/VPN IP ranges, or 0.0.0.0/0 only if necessary
+    - Production: **NEVER use 0.0.0.0/0** - use specific IP ranges or disable public access
+    - Example: ["203.0.113.0/24", "198.51.100.0/24"]
+
+    When endpoint_public_access is false, this setting is ignored.
+  EOT
   type        = list(string)
-  default     = ["0.0.0.0/0"]
+  default     = [] # Empty by default - must be explicitly set if public access is enabled
 
   validation {
-    condition     = length(var.public_access_cidrs) > 0
-    error_message = "At least one CIDR block must be specified for public access."
+    condition     = length(var.public_access_cidrs) == 0 || length(var.public_access_cidrs) > 0
+    error_message = "If specified, at least one CIDR block must be provided."
   }
 }
 

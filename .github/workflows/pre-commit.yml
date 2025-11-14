@@ -13,7 +13,7 @@ permissions:
   contents: read
 
 env:
-  TF_VERSION: '1.6.0'
+  TF_VERSION: '1.10.5'  # LTS version with long-term support
 
 jobs:
   pre-commit:
@@ -33,18 +33,39 @@ jobs:
         with:
           terraform_version: ${{ env.TF_VERSION }}
 
+      - name: Install terraform-docs
+        run: |
+          wget -qO- https://github.com/terraform-docs/terraform-docs/releases/download/v0.17.0/terraform-docs-v0.17.0-linux-amd64.tar.gz | tar xz
+          sudo mv terraform-docs /usr/local/bin/
+          terraform-docs --version
+
+      - name: Install TFLint
+        run: |
+          curl -s https://raw.githubusercontent.com/terraform-linters/tflint/master/install_linux.sh | bash
+          tflint --version
+
+      - name: Install Trivy
+        run: |
+          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
+          echo "deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main" | sudo tee -a /etc/apt/sources.list.d/trivy.list
+          sudo apt-get update
+          sudo apt-get install trivy
+          trivy --version
+
       - name: Cache pre-commit hooks
         uses: actions/cache@v4
         with:
           path: ~/.cache/pre-commit
-          key: pre-commit-${{ runner.os }}-${{ hashFiles('.pre-commit-config.yaml') }}
+          key: pre-commit-v2-${{ runner.os }}-${{ hashFiles('.pre-commit-config.yaml', '.terraform-docs.yml') }}
           restore-keys: |
-            pre-commit-${{ runner.os }}-
+            pre-commit-v2-${{ runner.os }}-
 
       - name: Install pre-commit
         run: pip install pre-commit
 
       - name: Run pre-commit hooks
+        env:
+          SKIP: terraform_docs  # Skip terraform_docs in CI (modifies files)
         run: pre-commit run --all-files --show-diff-on-failure
 
       - name: Annotate failures

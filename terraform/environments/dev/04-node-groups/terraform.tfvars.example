@@ -1,0 +1,128 @@
+###############################################################################
+# Development Environment - EKS Node Groups Configuration Example
+#
+# Copy this file to terraform.tfvars and customize for your environment
+# DO NOT commit terraform.tfvars to version control
+###############################################################################
+
+# AWS Region
+region = "us-east-1"
+
+# Project Configuration
+project_name = "eks-gitops"
+environment  = "dev"
+cost_center  = "engineering"
+
+###############################################################################
+# System Node Group Configuration
+# Purpose: Run critical cluster add-ons (CoreDNS, kube-proxy, etc.)
+###############################################################################
+
+system_instance_types = ["t3.medium"]
+system_desired_size   = 2
+system_min_size       = 2
+system_max_size       = 4
+system_node_disk_size = 50
+
+###############################################################################
+# Application Node Group Configuration
+# Purpose: Run user application workloads
+###############################################################################
+
+app_instance_types = ["t3.large"]
+
+# For dev environment, you can use SPOT instances for cost savings
+app_capacity_type = "ON_DEMAND"
+# For SPOT instances (70-90% cost savings):
+# app_capacity_type = "SPOT"
+# app_instance_types = ["t3.large", "t3a.large", "t2.large"]  # Diversify for better availability
+
+app_desired_size   = 2
+app_min_size       = 2
+app_max_size       = 10
+app_node_disk_size = 100
+
+# Additional Tags
+tags = {
+  Terraform  = "true"
+  Owner      = "platform-team"
+  Repository = "aws-eks-production"
+}
+
+###############################################################################
+# Deployment Notes
+###############################################################################
+
+# BEFORE APPLY:
+# 1. Ensure VPC is deployed (terraform/environments/dev/vpc)
+# 2. Ensure IAM roles are deployed (terraform/environments/dev/02-iam)
+# 3. Ensure EKS cluster is deployed (terraform/environments/dev/03-eks-cluster)
+# 4. Check that remote state backends are accessible
+
+# AFTER APPLY:
+# 1. Configure kubectl:
+#    aws eks update-kubeconfig --region us-east-1 --name eks-gitops-dev-eks
+#
+# 2. Verify nodes:
+#    kubectl get nodes -L node.kubernetes.io/type,workload-type
+#
+# 3. Verify taints:
+#    kubectl get nodes -o custom-columns=NAME:.metadata.name,TAINTS:.spec.taints
+#
+# 4. Test pod scheduling:
+#    kubectl run test-app --image=nginx
+#    kubectl get pods -o wide
+#
+# 5. Check node groups:
+#    terraform output node_groups_summary
+
+###############################################################################
+# Cost Considerations
+###############################################################################
+
+# System Nodes (ON_DEMAND):
+# - 2x t3.medium: ~$60/month
+#
+# App Nodes:
+# - 2x t3.large (ON_DEMAND): ~$120/month
+# - 2x t3.large (SPOT): ~$20-40/month
+#
+# Total estimated cost:
+# - With ON_DEMAND: ~$180/month
+# - With SPOT: ~$80-100/month
+#
+# Note: Costs are approximate and may vary by region and actual usage
+
+###############################################################################
+# Scaling Recommendations
+###############################################################################
+
+# Development Environment:
+# - System: 2-3 nodes (critical addons only)
+# - App: 2-6 nodes (can use SPOT)
+#
+# Staging Environment:
+# - System: 2-4 nodes
+# - App: 3-10 nodes (ON_DEMAND recommended)
+#
+# Production Environment:
+# - System: 3-5 nodes (always ON_DEMAND)
+# - App: 5-20 nodes (ON_DEMAND, consider Reserved Instances)
+
+###############################################################################
+# Instance Type Selection Guide
+###############################################################################
+
+# System Nodes (choose one):
+# - t3.small:  2 vCPU, 2 GiB  - Minimal (not recommended)
+# - t3.medium: 2 vCPU, 4 GiB  - Recommended for dev
+# - t3.large:  2 vCPU, 8 GiB  - Recommended for staging/prod
+# - m5.large:  2 vCPU, 8 GiB  - Production workloads
+#
+# App Nodes (choose one or mix):
+# - t3.medium:  2 vCPU, 4 GiB   - Small apps
+# - t3.large:   2 vCPU, 8 GiB   - General purpose
+# - t3.xlarge:  4 vCPU, 16 GiB  - Medium workloads
+# - m5.large:   2 vCPU, 8 GiB   - Balanced
+# - m5.xlarge:  4 vCPU, 16 GiB  - Production
+# - c5.xlarge:  4 vCPU, 8 GiB   - Compute-intensive

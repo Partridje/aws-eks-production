@@ -15,7 +15,7 @@ permissions:
   issues: write        # Required to comment on PRs
 
 env:
-  TF_VERSION: '1.6.0'
+  TF_VERSION: '1.10.5'  # LTS version
   TFLINT_VERSION: 'v0.50.0'
   AWS_REGION: 'us-east-1'
 

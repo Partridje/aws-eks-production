@@ -1,7 +1,11 @@
 ###############################################################################
-# Development Environment - VPC Configuration
+# Development Environment - EKS Node Groups Configuration
 #
 # ⚠️  Deploy only via GitHub Actions
+#
+# This creates managed node groups for the EKS cluster with separation:
+# - System nodes: Critical cluster addons
+# - App nodes: Application workloads
 ###############################################################################
 
 terraform {
@@ -51,31 +55,32 @@ locals {
 }
 
 ###############################################################################
-# VPC Module
+# EKS Node Groups Module
 ###############################################################################
 
-module "vpc" {
-  source = "../../modules/vpc"
+module "node_groups" {
+  source = "../../../modules/eks-node-groups"
 
-  project_name = var.project_name
-  environment  = var.environment
-  cluster_name = local.cluster_name
+  cluster_name       = local.cluster_name
+  node_role_arn      = data.terraform_remote_state.iam.outputs.node_role_arn
+  private_subnet_ids = data.terraform_remote_state.vpc.outputs.private_subnet_ids
+  oidc_provider_arn  = data.terraform_remote_state.eks.outputs.oidc_provider_arn
+  oidc_provider_url  = data.terraform_remote_state.eks.outputs.oidc_provider_url
 
-  vpc_cidr = var.vpc_cidr
+  # System Node Group Configuration
+  system_instance_types = var.system_instance_types
+  system_desired_size   = var.system_desired_size
+  system_min_size       = var.system_min_size
+  system_max_size       = var.system_max_size
+  system_node_disk_size = var.system_node_disk_size
 
-  # NAT Gateway Configuration
-  # Dev: Use single NAT GW for cost savings (~$32/month vs ~$96/month)
-  # Prod: Use one NAT GW per AZ for high availability
-  enable_nat_gateway = var.enable_nat_gateway
-  single_nat_gateway = var.single_nat_gateway
-
-  # VPC Endpoints
-  # Reduce NAT Gateway costs and improve security
-  enable_vpc_endpoints = var.enable_vpc_endpoints
-
-  # Flow Logs
-  enable_flow_logs    = var.enable_flow_logs
-  flow_logs_retention = var.flow_logs_retention
+  # Application Node Group Configuration
+  app_instance_types = var.app_instance_types
+  app_capacity_type  = var.app_capacity_type
+  app_desired_size   = var.app_desired_size
+  app_min_size       = var.app_min_size
+  app_max_size       = var.app_max_size
+  app_node_disk_size = var.app_node_disk_size
 
   tags = var.tags
 }

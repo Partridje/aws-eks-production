@@ -13,7 +13,7 @@ permissions:
   contents: read    # Required to checkout code
 
 env:
-  TF_VERSION: '1.6.0'
+  TF_VERSION: '1.10.5'  # LTS version
   AWS_REGION: 'us-east-1'
 
 jobs:
