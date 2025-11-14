@@ -13,7 +13,7 @@ permissions:
   contents: read
 
 env:
-  TF_VERSION: '1.6.0'
+  TF_VERSION: '1.10.5'  # LTS version with long-term support
 
 jobs:
   pre-commit:
