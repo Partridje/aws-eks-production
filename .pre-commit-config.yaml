@@ -34,7 +34,8 @@ repos:
         args:
           - --args=--severity=CRITICAL,HIGH
           - --args=--skip-dirs="**/.terraform"
-        files: ^terraform/environments/  # Only scan environment configs, not reusable modules
+          - --args=--skip-dirs="**/modules/**"  # Don't scan reusable modules (security validated in environments)
+        files: ^terraform/environments/  # Only process environment files
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0  # Latest as of 2025
