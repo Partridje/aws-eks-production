@@ -145,6 +145,19 @@ module "observability" {
 }
 
 ################################################################################
+# RBAC Module
+################################################################################
+
+module "rbac" {
+  source = "../../modules/rbac"
+
+  cluster_name = local.cluster_name
+  tags         = local.tags
+
+  depends_on = [module.eks]
+}
+
+################################################################################
 # Outputs
 ################################################################################
 
@@ -196,5 +209,24 @@ output "iam_role_arns" {
     fluent_bit                   = module.iam.fluent_bit_role_arn
     grafana                      = module.iam.grafana_role_arn
     xray_daemon                  = module.iam.xray_daemon_role_arn
+  }
+}
+
+# RBAC IAM Role ARNs for kubectl access
+output "rbac_role_arns" {
+  description = "IAM Role ARNs for EKS RBAC access"
+  value = {
+    admin     = module.rbac.admin_role_arn
+    developer = module.rbac.developer_role_arn
+    viewer    = module.rbac.viewer_role_arn
+  }
+}
+
+output "rbac_role_names" {
+  description = "IAM Role Names for EKS RBAC access"
+  value = {
+    admin     = module.rbac.admin_role_name
+    developer = module.rbac.developer_role_name
+    viewer    = module.rbac.viewer_role_name
   }
 }
