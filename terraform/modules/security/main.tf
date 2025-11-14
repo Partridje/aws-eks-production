@@ -8,9 +8,8 @@
 
 # Placeholder - add security resources here when needed
 
-# Use variables to avoid TFLint warnings
-locals {
-  # Reserved for future use
-  _cluster_name = var.cluster_name
-  _tags         = var.tags
-}
+# Example usage of variables (commented out for now):
+# resource "aws_guardduty_detector" "main" {
+#   enable = true
+#   tags   = merge(var.tags, { Name = "${var.cluster_name}-guardduty" })
+# }

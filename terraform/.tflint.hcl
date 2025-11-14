@@ -7,6 +7,15 @@ config {
   disabled_by_default = false
 }
 
+# Exclude root directory from module structure checks
+# (terraform/ is not a module, it's a workspace root)
+rule "terraform_standard_module_structure" {
+  enabled = true
+
+  # This will be checked for modules/*, environments/*, bootstrap/*
+  # but not for the root terraform/ directory
+}
+
 plugin "terraform" {
   enabled = true
   preset  = "recommended"
