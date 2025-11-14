@@ -1,0 +1,94 @@
+###############################################################################
+# Development Environment - EKS Cluster Configuration Example
+#
+# Copy this file to terraform.tfvars and customize for your environment
+# DO NOT commit terraform.tfvars to version control
+###############################################################################
+
+# AWS Region
+region = "us-east-1"
+
+# Project Configuration
+project_name = "eks-gitops"
+environment  = "dev"
+cost_center  = "engineering"
+
+# EKS Cluster Version
+cluster_version = "1.31"  # Latest: https://docs.aws.amazon.com/eks/latest/userguide/kubernetes-versions.html
+
+# API Endpoint Access
+endpoint_private_access = true   # Always true for production
+endpoint_public_access  = true   # Set to false after setting up VPN/bastion
+
+# Public API Access CIDR
+# For security, restrict to your IP or organization network
+public_access_cidrs = ["0.0.0.0/0"]
+# Recommended for production:
+# public_access_cidrs = ["YOUR_OFFICE_IP/32", "YOUR_VPN_IP/32"]
+
+# Additional Security Group (optional)
+create_cluster_security_group = false
+additional_security_group_ids = []
+
+# Control Plane Logging
+# Options: api, audit, authenticator, controllerManager, scheduler
+enabled_log_types = ["api", "audit", "authenticator"]
+log_retention_days = 7  # Increase for production (30-90 days)
+encrypt_logs = false    # Set to true for compliance requirements
+
+# Additional Tags
+tags = {
+  Terraform  = "true"
+  Owner      = "platform-team"
+  Repository = "aws-eks-production"
+}
+
+###############################################################################
+# Deployment Notes
+###############################################################################
+
+# BEFORE APPLY:
+# 1. Ensure VPC is deployed (terraform/environments/dev/vpc)
+# 2. Ensure IAM roles are deployed (terraform/environments/dev/02-iam)
+# 3. Check that remote state backends are accessible
+
+# AFTER APPLY:
+# 1. Configure kubectl:
+#    aws eks update-kubeconfig --region us-east-1 --name eks-gitops-dev-eks
+#
+# 2. Verify cluster:
+#    kubectl get nodes
+#    kubectl cluster-info
+#
+# 3. OIDC provider is automatically created - IRSA is ready to use!
+#
+# 4. Check OIDC provider:
+#    terraform output oidc_provider_arn
+#
+# 5. Create node groups (next step)
+
+###############################################################################
+# Cost Considerations
+###############################################################################
+
+# EKS Control Plane: $0.10/hour = ~$73/month
+# CloudWatch Logs: ~$0.50/GB ingested + $0.03/GB storage
+# KMS: $1/month per key + $0.03 per 10,000 requests
+# NAT Gateway data transfer (existing): variable
+#
+# Estimated cluster cost (control plane only): ~$75-80/month
+# Note: Node groups will add significant additional costs
+
+###############################################################################
+# Security Recommendations
+###############################################################################
+
+# PRODUCTION CHECKLIST:
+# □ Set public_access_cidrs to specific IPs
+# □ Enable all log types for audit
+# □ Increase log_retention_days to 30-90
+# □ Enable encrypt_logs = true
+# □ Create additional security group with strict rules
+# □ Set endpoint_public_access = false (after VPN setup)
+# □ Enable AWS Config and GuardDuty for cluster
+# □ Set up VPC Flow Logs (already done in VPC module)
