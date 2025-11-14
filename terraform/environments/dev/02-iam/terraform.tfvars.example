@@ -1,0 +1,82 @@
+###############################################################################
+# Development Environment - IAM Configuration Example
+#
+# Copy this file to terraform.tfvars and customize for your environment
+# DO NOT commit terraform.tfvars to version control
+###############################################################################
+
+# AWS Region
+region = "us-east-1"
+
+# Project Configuration
+project_name = "eks-gitops"
+environment  = "dev"
+cost_center  = "engineering"
+
+# OIDC Provider Configuration
+# PHASE 1 (Before EKS cluster exists):
+create_oidc_provider = false
+oidc_provider_url    = ""
+
+# PHASE 2 (After EKS cluster is created):
+# create_oidc_provider = true
+# oidc_provider_url    = "https://oidc.eks.us-east-1.amazonaws.com/id/EXAMPLE539D4633E53DE1B71EXAMPLE"
+
+# Node Configuration
+enable_ssm_access = true  # Enable SSM Session Manager for node access
+
+# IRSA Policy Creation
+# Create policies for common Kubernetes add-ons
+create_ebs_csi_policy                      = true
+create_external_dns_policy                 = true
+create_cluster_autoscaler_policy           = true
+create_aws_load_balancer_controller_policy = true
+
+# Additional Tags
+tags = {
+  Terraform  = "true"
+  Owner      = "platform-team"
+  Repository = "aws-eks-production"
+}
+
+###############################################################################
+# Deployment Phases
+###############################################################################
+
+# PHASE 1: Initial IAM Setup (Before EKS Cluster)
+# -----------------------------------------------
+# create_oidc_provider = false
+# - Creates cluster and node IAM roles
+# - Creates IRSA policies (but no OIDC provider yet)
+# - Node role includes SSM access
+#
+# Resources created: ~7
+# - 1 cluster role + 2 policy attachments
+# - 1 node role + 4-5 policy attachments
+# - 1 instance profile
+# - 4 IRSA policies (EBS CSI, External DNS, CA, AWS LBC)
+
+# PHASE 2: OIDC Provider Setup (After EKS Cluster Exists)
+# --------------------------------------------------------
+# create_oidc_provider = true
+# oidc_provider_url    = "<from EKS cluster output>"
+# - Creates OIDC provider
+# - Enables IRSA for Kubernetes service accounts
+#
+# Additional resources: +1 (OIDC provider)
+#
+# Get OIDC URL from EKS cluster:
+#   terraform output -raw cluster_oidc_issuer_url
+
+###############################################################################
+# Cost Considerations
+###############################################################################
+
+# IAM Resources: FREE
+# - Roles: No charge
+# - Policies: No charge
+# - Instance profiles: No charge
+# - OIDC provider: No charge
+#
+# STS API calls (IRSA): ~$0.0001 per 1000 requests
+# Estimated IRSA cost: < $1/month for typical workloads

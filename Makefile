@@ -128,3 +128,70 @@ init-prod: ## Initialize prod environment (after backend setup)
 	fi
 	@cd terraform/environments/prod && terraform init
 	@echo "$(GREEN)✓ Prod environment initialized$(NC)"
+
+###############################################################################
+# Linting and Code Quality
+###############################################################################
+
+check-linters: ## Check if linters are installed
+	@echo "$(BLUE)Checking linters installation...$(NC)"
+	@command -v tflint >/dev/null 2>&1 && echo "$(GREEN)✓ TFLint installed$(NC)" || echo "$(YELLOW)✗ TFLint not installed (brew install tflint)$(NC)"
+	@command -v tfsec >/dev/null 2>&1 && echo "$(GREEN)✓ tfsec installed$(NC)" || echo "$(YELLOW)✗ tfsec not installed (brew install tfsec)$(NC)"
+	@command -v checkov >/dev/null 2>&1 && echo "$(GREEN)✓ checkov installed$(NC)" || echo "$(YELLOW)✗ checkov not installed (pip3 install checkov)$(NC)"
+	@command -v terraform-docs >/dev/null 2>&1 && echo "$(GREEN)✓ terraform-docs installed$(NC)" || echo "$(YELLOW)✗ terraform-docs not installed (brew install terraform-docs)$(NC)"
+
+tflint-init: ## Initialize TFLint (download plugins)
+	@echo "$(BLUE)Initializing TFLint...$(NC)"
+	@if command -v tflint > /dev/null; then \
+		tflint --init; \
+		echo "$(GREEN)✓ TFLint initialized$(NC)"; \
+	else \
+		echo "$(RED)✗ TFLint is not installed$(NC)"; \
+		echo "$(YELLOW)Install with: brew install tflint$(NC)"; \
+		exit 1; \
+	fi
+
+tflint: ## Run TFLint on all Terraform code
+	@echo "$(BLUE)Running TFLint...$(NC)"
+	@if command -v tflint > /dev/null; then \
+		tflint --recursive --config=.tflint.hcl terraform/; \
+		echo "$(GREEN)✓ TFLint checks passed$(NC)"; \
+	else \
+		echo "$(YELLOW)⚠ TFLint not installed, skipping$(NC)"; \
+	fi
+
+tfsec: ## Run tfsec security scanner
+	@echo "$(BLUE)Running tfsec security scan...$(NC)"
+	@if command -v tfsec > /dev/null; then \
+		tfsec terraform/ --config-file=.tfsec.yml; \
+		echo "$(GREEN)✓ tfsec security checks passed$(NC)"; \
+	else \
+		echo "$(YELLOW)⚠ tfsec not installed, skipping$(NC)"; \
+	fi
+
+checkov: ## Run checkov policy scanner
+	@echo "$(BLUE)Running checkov policy scan...$(NC)"
+	@if command -v checkov > /dev/null; then \
+		checkov -d terraform/ --quiet --compact; \
+		echo "$(GREEN)✓ checkov policy checks passed$(NC)"; \
+	else \
+		echo "$(YELLOW)⚠ checkov not installed, skipping$(NC)"; \
+	fi
+
+docs: ## Generate module documentation
+	@echo "$(BLUE)Generating Terraform documentation...$(NC)"
+	@if command -v terraform-docs > /dev/null; then \
+		for dir in terraform/modules/*/; do \
+			echo "$(YELLOW)Generating docs for $$dir$(NC)"; \
+			terraform-docs markdown table $$dir > $$dir/README_AUTO.md; \
+		done; \
+		echo "$(GREEN)✓ Documentation generated$(NC)"; \
+	else \
+		echo "$(YELLOW)⚠ terraform-docs not installed, skipping$(NC)"; \
+	fi
+
+lint: tflint tfsec ## Run all linters (TFLint and tfsec)
+
+lint-all: tflint tfsec checkov ## Run all linters including checkov
+
+security-scan: tfsec checkov ## Run security scanners only
