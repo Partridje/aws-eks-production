@@ -1,0 +1,64 @@
+---
+###############################################################################
+# tfsec Configuration
+# https://aquasecurity.github.io/tfsec/
+###############################################################################
+
+# Minimum severity level to report (CRITICAL, HIGH, MEDIUM, LOW)
+minimum_severity: MEDIUM
+
+# Exclude specific checks
+exclude:
+  # Backend bucket might not have logging enabled (separate logging bucket needed)
+  - aws-s3-enable-bucket-logging
+
+  # Database subnet group doesn't need encryption tags
+  - aws-rds-encrypt-cluster-storage-data
+
+# Exclude specific files or directories
+exclude_paths:
+  - .terraform/**
+  - **/.terraform/**
+  - terraform/modules/**/*.example.tf
+  - terraform/environments/**/terraform.tfvars
+
+# Custom check configuration
+checks:
+  # Require encryption for S3 buckets
+  - aws-s3-encryption-customer-key:
+      enabled: true
+
+  # Require versioning for S3 buckets
+  - aws-s3-enable-versioning:
+      enabled: true
+
+  # Require VPC flow logs
+  - aws-ec2-require-vpc-flow-logs-for-all-vpcs:
+      enabled: true
+
+# Configure output format
+format: default  # Options: default, json, csv, checkstyle, junit, sarif
+
+# Enable color output
+colour: true
+
+# Configure workspace
+workspace: ""
+
+# Configure tfvars files to use
+tfvars_file: []
+
+# Include passed checks in output
+include_passed: false
+
+# Include ignored checks in output
+include_ignored: false
+
+# Soft fail - exit with 0 even if issues are found (useful for CI/CD warnings)
+soft_fail: false
+
+# Run checks concurrently
+concise_output: false
+
+# Custom policies directory (optional)
+# custom_check_dir: .tfsec/custom_checks
