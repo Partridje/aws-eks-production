@@ -33,3 +33,9 @@ variable "alert_email" {
   type        = string
   default     = "tcytcerov@gmail.com"
 }
+
+variable "domain" {
+  description = "Domain name for services (e.g., ArgoCD, Grafana)"
+  type        = string
+  default     = "devseatit.com"
+}

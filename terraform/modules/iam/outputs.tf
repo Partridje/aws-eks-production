@@ -52,3 +52,8 @@ output "cloudwatch_agent_role_arn" {
   description = "ARN of the CloudWatch Agent IAM role"
   value       = module.cloudwatch_agent_role.role_arn
 }
+
+output "argocd_role_arn" {
+  description = "ARN of the ArgoCD IAM role"
+  value       = module.argocd_role.role_arn
+}

@@ -648,3 +648,49 @@ module "cloudwatch_agent_role" {
 
   tags = var.tags
 }
+
+################################################################################
+# ArgoCD Role
+################################################################################
+
+module "argocd_role" {
+  source = "./irsa"
+
+  role_name                 = "${var.cluster_name}-argocd"
+  oidc_provider_arn         = aws_iam_openid_connect_provider.eks.arn
+  oidc_provider_url         = var.cluster_oidc_issuer_url
+  service_account_name      = "argocd-application-controller"
+  service_account_namespace = "argocd"
+
+  policy_arns = []
+
+  inline_policies = {
+    argocd = jsonencode({
+      Version = "2012-10-17"
+      Statement = [
+        {
+          Effect = "Allow"
+          Action = [
+            "ecr:GetAuthorizationToken",
+            "ecr:BatchCheckLayerAvailability",
+            "ecr:GetDownloadUrlForLayer",
+            "ecr:BatchGetImage",
+            "ecr:DescribeRepositories",
+            "ecr:ListImages"
+          ]
+          Resource = "*"
+        },
+        {
+          Effect = "Allow"
+          Action = [
+            "secretsmanager:GetSecretValue",
+            "secretsmanager:DescribeSecret"
+          ]
+          Resource = "arn:aws:secretsmanager:*:${data.aws_caller_identity.current.account_id}:secret:${var.cluster_name}-*"
+        }
+      ]
+    })
+  }
+
+  tags = var.tags
+}

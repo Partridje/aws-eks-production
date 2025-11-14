@@ -12,6 +12,18 @@ terraform {
       source  = "hashicorp/null"
       version = "~> 3.0"
     }
+    helm = {
+      source  = "hashicorp/helm"
+      version = "~> 2.12"
+    }
+    kubernetes = {
+      source  = "hashicorp/kubernetes"
+      version = "~> 2.25"
+    }
+    random = {
+      source  = "hashicorp/random"
+      version = "~> 3.6"
+    }
   }
 
   backend "s3" {
@@ -33,6 +45,42 @@ provider "aws" {
       ManagedBy   = "Terraform"
       Owner       = "partridje"
     }
+  }
+}
+
+provider "helm" {
+  kubernetes {
+    host                   = module.eks.cluster_endpoint
+    cluster_ca_certificate = base64decode(module.eks.cluster_certificate_authority_data)
+    exec {
+      api_version = "client.authentication.k8s.io/v1beta1"
+      command     = "aws"
+      args = [
+        "eks",
+        "get-token",
+        "--cluster-name",
+        module.eks.cluster_id,
+        "--region",
+        var.aws_region
+      ]
+    }
+  }
+}
+
+provider "kubernetes" {
+  host                   = module.eks.cluster_endpoint
+  cluster_ca_certificate = base64decode(module.eks.cluster_certificate_authority_data)
+  exec {
+    api_version = "client.authentication.k8s.io/v1beta1"
+    command     = "aws"
+    args = [
+      "eks",
+      "get-token",
+      "--cluster-name",
+      module.eks.cluster_id,
+      "--region",
+      var.aws_region
+    ]
   }
 }
 
@@ -164,6 +212,26 @@ module "rbac" {
 }
 
 ################################################################################
+# ArgoCD Module
+################################################################################
+
+module "argocd" {
+  source = "../../modules/argocd"
+
+  cluster_name                       = module.eks.cluster_id
+  cluster_endpoint                   = module.eks.cluster_endpoint
+  cluster_certificate_authority_data = module.eks.cluster_certificate_authority_data
+  oidc_provider_arn                  = module.iam.oidc_provider_arn
+
+  domain    = var.domain
+  enable_ha = false # Set to true in production
+
+  tags = local.tags
+
+  depends_on = [module.eks, module.iam]
+}
+
+################################################################################
 # Outputs
 ################################################################################
 
@@ -235,4 +303,21 @@ output "rbac_role_names" {
     developer = module.rbac.developer_role_name
     viewer    = module.rbac.viewer_role_name
   }
+}
+
+# ArgoCD Outputs
+output "argocd_server_url" {
+  description = "ArgoCD server URL"
+  value       = module.argocd.argocd_server_url
+}
+
+output "argocd_admin_password_secret_arn" {
+  description = "AWS Secrets Manager ARN for ArgoCD admin password"
+  value       = module.argocd.admin_password_secret_arn
+}
+
+output "argocd_admin_password" {
+  description = "ArgoCD admin password"
+  value       = module.argocd.admin_password
+  sensitive   = true
 }
