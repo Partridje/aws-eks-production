@@ -63,6 +63,9 @@ jobs:
       - name: Install pre-commit
         run: pip install pre-commit
 
+      - name: Clean pre-commit cache
+        run: pre-commit clean
+
       - name: Run pre-commit hooks
         env:
           SKIP: terraform_docs  # Skip terraform_docs in CI (modifies files)
