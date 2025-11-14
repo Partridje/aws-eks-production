@@ -1,0 +1,65 @@
+###############################################################################
+# Development Environment - Example Variables
+#
+# Copy this file to terraform.tfvars and customize for your environment
+# DO NOT commit terraform.tfvars to version control
+###############################################################################
+
+# AWS Region
+region = "us-east-1"
+
+# Project Configuration
+project_name = "eks-gitops"
+environment  = "dev"
+cost_center  = "engineering"
+
+# VPC Configuration
+vpc_cidr = "10.0.0.0/16"
+
+# NAT Gateway Configuration
+# Dev: Single NAT Gateway for cost savings (~$32/month vs ~$96/month)
+# Prod: Set single_nat_gateway = false for high availability
+enable_nat_gateway = true
+single_nat_gateway = true  # Change to false for production
+
+# VPC Endpoints
+# Reduces NAT Gateway data transfer costs
+# Each interface endpoint: ~$7.20/month
+# Savings on data transfer: ~$0.045/GB avoided
+enable_vpc_endpoints = true  # Set to false to reduce costs in dev
+
+# VPC Flow Logs
+enable_flow_logs    = true
+flow_logs_retention = 7  # Days (1, 3, 7, 14, 30, etc.)
+
+# Additional Tags
+tags = {
+  Terraform  = "true"
+  Owner      = "platform-team"
+  Repository = "aws-eks-production"
+}
+
+###############################################################################
+# Configuration Examples for Different Scenarios
+###############################################################################
+
+# DEVELOPMENT (Cost Optimized)
+# -----------------------------
+# single_nat_gateway   = true   # 1 NAT GW instead of 3
+# enable_vpc_endpoints = false  # Disable endpoints to save ~$36/month
+# flow_logs_retention  = 1      # Minimal retention
+# Monthly cost: ~$33 (1 NAT GW)
+
+# STAGING (Balanced)
+# ------------------
+# single_nat_gateway   = true   # 1 NAT GW
+# enable_vpc_endpoints = true   # Enable for testing
+# flow_logs_retention  = 7      # Standard retention
+# Monthly cost: ~$70
+
+# PRODUCTION (High Availability)
+# -------------------------------
+# single_nat_gateway   = false  # 3 NAT GWs (one per AZ)
+# enable_vpc_endpoints = true   # Enable for cost savings on data transfer
+# flow_logs_retention  = 30     # Longer retention for compliance
+# Monthly cost: ~$134 (fixed) + data transfer costs

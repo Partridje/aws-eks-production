@@ -1,0 +1,14 @@
+# Copy this backend configuration to your terraform/environments/{env}/backend.tf file
+
+terraform {
+  backend "s3" {
+    bucket         = "${bucket}"
+    key            = "ENV_NAME/terraform.tfstate"  # Replace ENV_NAME with dev/prod
+    region         = "${region}"
+    dynamodb_table = "${dynamodb_table}"
+    encrypt        = true
+%{ if encrypt ~}
+    kms_key_id     = "${kms_key_id}"
+%{ endif ~}
+  }
+}
