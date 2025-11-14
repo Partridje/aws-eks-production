@@ -1,0 +1,53 @@
+name: Pre-commit Checks
+
+on:
+  push:
+    branches:
+      - '**'
+    paths:
+      - 'terraform/**'
+      - '.pre-commit-config.yaml'
+      - '.github/workflows/pre-commit.yml'
+
+permissions:
+  contents: read
+
+env:
+  TF_VERSION: '1.6.0'
+
+jobs:
+  pre-commit:
+    name: Run Pre-commit Hooks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Cache pre-commit hooks
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pre-commit
+          key: pre-commit-${{ runner.os }}-${{ hashFiles('.pre-commit-config.yaml') }}
+          restore-keys: |
+            pre-commit-${{ runner.os }}-
+
+      - name: Install pre-commit
+        run: pip install pre-commit
+
+      - name: Run pre-commit hooks
+        run: pre-commit run --all-files --show-diff-on-failure
+
+      - name: Annotate failures
+        if: failure()
+        run: |
+          echo "::error::Pre-commit hooks failed. Please run 'pre-commit run --all-files' locally and fix the issues."

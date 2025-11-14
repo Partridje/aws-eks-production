@@ -1,0 +1,308 @@
+name: Terraform Apply
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'terraform/**'
+      - '.github/workflows/terraform-apply.yml'
+
+permissions:
+  id-token: write   # Required for OIDC
+  contents: read    # Required to checkout code
+
+env:
+  TF_VERSION: '1.6.0'
+  AWS_REGION: 'us-east-1'
+
+jobs:
+  ###############################################################################
+  # Job 1: Detect Changed Environments
+  ###############################################################################
+  detect-changes:
+    name: Detect Changed Environments
+    runs-on: ubuntu-latest
+    outputs:
+      environments: ${{ steps.detect.outputs.environments }}
+      has-changes: ${{ steps.detect.outputs.has-changes }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Detect changed environments
+        id: detect
+        run: |
+          # Get list of changed files in the last commit
+          CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD)
+
+          echo "Changed files:"
+          echo "$CHANGED_FILES"
+
+          # Extract unique environment paths
+          ENVIRONMENTS=$(echo "$CHANGED_FILES" | \
+            grep '^terraform/environments/' | \
+            cut -d'/' -f3,4 | \
+            sort -u | \
+            jq -R -s -c 'split("\n") | map(select(length > 0))')
+
+          echo "Detected environments: $ENVIRONMENTS"
+
+          if [ "$ENVIRONMENTS" = "[]" ] || [ -z "$ENVIRONMENTS" ]; then
+            echo "has-changes=false" >> $GITHUB_OUTPUT
+            echo "environments=[]" >> $GITHUB_OUTPUT
+          else
+            echo "has-changes=true" >> $GITHUB_OUTPUT
+            echo "environments=$ENVIRONMENTS" >> $GITHUB_OUTPUT
+          fi
+
+  ###############################################################################
+  # Job 2: Terraform Apply for Dev Environment
+  ###############################################################################
+  terraform-apply-dev:
+    name: Apply - Dev
+    runs-on: ubuntu-latest
+    needs: detect-changes
+    if: needs.detect-changes.outputs.has-changes == 'true' && contains(needs.detect-changes.outputs.environments, 'dev')
+    strategy:
+      max-parallel: 1  # Apply environments sequentially
+      fail-fast: true
+      matrix:
+        environment:
+          - dev/02-iam
+          - dev/03-eks-cluster
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+          terraform_wrapper: false
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/github-actions-terraform
+          aws-region: ${{ env.AWS_REGION }}
+          role-session-name: GitHubActions-Terraform-Apply-${{ matrix.environment }}
+
+      - name: Cache Terraform providers
+        uses: actions/cache@v4
+        with:
+          path: terraform/environments/${{ matrix.environment }}/.terraform
+          key: ${{ runner.os }}-terraform-${{ matrix.environment }}-${{ hashFiles('terraform/environments/${{ matrix.environment }}/.terraform.lock.hcl') }}
+          restore-keys: |
+            ${{ runner.os }}-terraform-${{ matrix.environment }}-
+
+      - name: Terraform Init
+        run: |
+          cd terraform/environments/${{ matrix.environment }}
+          terraform init
+
+      - name: Terraform Plan
+        id: plan
+        run: |
+          cd terraform/environments/${{ matrix.environment }}
+          terraform plan -out=tfplan -no-color
+          terraform show -json tfplan > plan.json
+
+      - name: Terraform Apply
+        id: apply
+        run: |
+          cd terraform/environments/${{ matrix.environment }}
+          terraform apply -auto-approve tfplan
+
+      - name: Terraform Output
+        id: output
+        run: |
+          cd terraform/environments/${{ matrix.environment }}
+          terraform output -json > outputs.json
+
+      - name: Upload outputs
+        uses: actions/upload-artifact@v4
+        with:
+          name: terraform-outputs-${{ matrix.environment }}
+          path: terraform/environments/${{ matrix.environment }}/outputs.json
+          retention-days: 30
+
+      - name: Notify on success
+        if: success() && vars.SLACK_WEBHOOK_URL != ''
+        uses: slackapi/slack-github-action@v1
+        with:
+          payload: |
+            {
+              "text": "✅ Terraform Apply Successful",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "✅ *Terraform Apply Successful*\n*Environment:* `${{ matrix.environment }}`\n*Commit:* ${{ github.event.head_commit.message }}\n*Author:* ${{ github.actor }}"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
+
+      - name: Notify on failure
+        if: failure() && vars.SLACK_WEBHOOK_URL != ''
+        uses: slackapi/slack-github-action@v1
+        with:
+          payload: |
+            {
+              "text": "❌ Terraform Apply Failed",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "❌ *Terraform Apply Failed*\n*Environment:* `${{ matrix.environment }}`\n*Commit:* ${{ github.event.head_commit.message }}\n*Author:* ${{ github.actor }}\n*Logs:* ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
+
+  ###############################################################################
+  # Job 3: Terraform Apply for Prod Environment (Manual Approval Required)
+  ###############################################################################
+  terraform-apply-prod:
+    name: Apply - Prod (Manual Approval)
+    runs-on: ubuntu-latest
+    needs: detect-changes
+    if: needs.detect-changes.outputs.has-changes == 'true' && contains(needs.detect-changes.outputs.environments, 'prod')
+    environment:
+      name: production
+      url: https://console.aws.amazon.com/eks
+    strategy:
+      max-parallel: 1
+      fail-fast: true
+      matrix:
+        environment:
+          - prod/02-iam
+          - prod/03-eks-cluster
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+          terraform_wrapper: false
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/github-actions-terraform
+          aws-region: ${{ env.AWS_REGION }}
+          role-session-name: GitHubActions-Terraform-Apply-${{ matrix.environment }}
+
+      - name: Cache Terraform providers
+        uses: actions/cache@v4
+        with:
+          path: terraform/environments/${{ matrix.environment }}/.terraform
+          key: ${{ runner.os }}-terraform-${{ matrix.environment }}-${{ hashFiles('terraform/environments/${{ matrix.environment }}/.terraform.lock.hcl') }}
+          restore-keys: |
+            ${{ runner.os }}-terraform-${{ matrix.environment }}-
+
+      - name: Terraform Init
+        run: |
+          cd terraform/environments/${{ matrix.environment }}
+          terraform init
+
+      - name: Terraform Plan
+        id: plan
+        run: |
+          cd terraform/environments/${{ matrix.environment }}
+          terraform plan -out=tfplan -no-color
+          terraform show -json tfplan > plan.json
+
+      - name: Terraform Apply
+        id: apply
+        run: |
+          cd terraform/environments/${{ matrix.environment }}
+          terraform apply -auto-approve tfplan
+
+      - name: Terraform Output
+        id: output
+        run: |
+          cd terraform/environments/${{ matrix.environment }}
+          terraform output -json > outputs.json
+
+      - name: Upload outputs
+        uses: actions/upload-artifact@v4
+        with:
+          name: terraform-outputs-${{ matrix.environment }}
+          path: terraform/environments/${{ matrix.environment }}/outputs.json
+          retention-days: 90
+
+      - name: Notify on success
+        if: success() && vars.SLACK_WEBHOOK_URL != ''
+        uses: slackapi/slack-github-action@v1
+        with:
+          payload: |
+            {
+              "text": "✅ Production Terraform Apply Successful",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "✅ *Production Terraform Apply Successful*\n*Environment:* `${{ matrix.environment }}`\n*Commit:* ${{ github.event.head_commit.message }}\n*Author:* ${{ github.actor }}"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
+
+      - name: Notify on failure
+        if: failure() && vars.SLACK_WEBHOOK_URL != ''
+        uses: slackapi/slack-github-action@v1
+        with:
+          payload: |
+            {
+              "text": "❌ Production Terraform Apply Failed",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "❌ *Production Terraform Apply Failed*\n*Environment:* `${{ matrix.environment }}`\n*Commit:* ${{ github.event.head_commit.message }}\n*Author:* ${{ github.actor }}\n*Logs:* ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
+
+  ###############################################################################
+  # Job 4: Summary and Cleanup
+  ###############################################################################
+  summary:
+    name: Deployment Summary
+    runs-on: ubuntu-latest
+    needs: [terraform-apply-dev, terraform-apply-prod]
+    if: always() && needs.detect-changes.outputs.has-changes == 'true'
+    steps:
+      - name: Create deployment summary
+        run: |
+          echo "## Terraform Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit:** ${{ github.event.head_commit.message }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Author:** ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Results:" >> $GITHUB_STEP_SUMMARY
+          echo "- Dev Apply: ${{ needs.terraform-apply-dev.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Prod Apply: ${{ needs.terraform-apply-prod.result }}" >> $GITHUB_STEP_SUMMARY

@@ -1,0 +1,448 @@
+name: Terraform PR Checks
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'terraform/**'
+      - '.github/workflows/terraform-pr.yml'
+
+permissions:
+  id-token: write      # Required for OIDC
+  contents: read       # Required to checkout code
+  pull-requests: write # Required to comment on PRs
+  issues: write        # Required to comment on PRs
+
+env:
+  TF_VERSION: '1.6.0'
+  TFLINT_VERSION: 'v0.50.0'
+  AWS_REGION: 'us-east-1'
+
+jobs:
+  ###############################################################################
+  # Job 1: Terraform Formatting Check
+  ###############################################################################
+  terraform-fmt:
+    name: Terraform Format Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Terraform Format Check
+        id: fmt
+        run: |
+          echo "Checking Terraform formatting..."
+          terraform fmt -check -recursive -diff terraform/
+        continue-on-error: true
+
+      - name: Comment on PR if formatting fails
+        if: steps.fmt.outcome == 'failure'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '❌ **Terraform Format Check Failed**\n\nPlease run `terraform fmt -recursive terraform/` to fix formatting issues.'
+            })
+
+      - name: Fail if formatting is incorrect
+        if: steps.fmt.outcome == 'failure'
+        run: exit 1
+
+  ###############################################################################
+  # Job 2: Terraform Validation
+  ###############################################################################
+  terraform-validate:
+    name: Terraform Validate
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        environment:
+          - dev/02-iam
+          - dev/03-eks-cluster
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Cache Terraform providers
+        uses: actions/cache@v4
+        with:
+          path: terraform/environments/${{ matrix.environment }}/.terraform
+          key: ${{ runner.os }}-terraform-${{ matrix.environment }}-${{ hashFiles('terraform/environments/${{ matrix.environment }}/.terraform.lock.hcl') }}
+          restore-keys: |
+            ${{ runner.os }}-terraform-${{ matrix.environment }}-
+
+      - name: Terraform Init
+        run: |
+          cd terraform/environments/${{ matrix.environment }}
+          terraform init -backend=false
+
+      - name: Terraform Validate
+        run: |
+          cd terraform/environments/${{ matrix.environment }}
+          terraform validate
+
+  ###############################################################################
+  # Job 3: TFLint
+  ###############################################################################
+  tflint:
+    name: TFLint Security & Best Practices
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Cache TFLint plugins
+        uses: actions/cache@v4
+        with:
+          path: ~/.tflint.d/plugins
+          key: ${{ runner.os }}-tflint-${{ hashFiles('.tflint.hcl') }}
+
+      - name: Setup TFLint
+        uses: terraform-linters/setup-tflint@v4
+        with:
+          tflint_version: ${{ env.TFLINT_VERSION }}
+
+      - name: Initialize TFLint
+        run: tflint --init
+
+      - name: Run TFLint
+        id: tflint
+        run: |
+          echo "Running TFLint..."
+          tflint --recursive --format compact
+        continue-on-error: true
+
+      - name: Comment TFLint results
+        if: steps.tflint.outcome == 'failure'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '⚠️ **TFLint found issues**\n\nPlease review the TFLint output in the Actions log and fix the issues.'
+            })
+
+  ###############################################################################
+  # Job 4: Security Scanning
+  ###############################################################################
+  security-scan:
+    name: Security Scan (Checkov + Trivy)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Checkov
+        id: checkov
+        uses: bridgecrewio/checkov-action@master
+        with:
+          directory: terraform/
+          framework: terraform
+          output_format: cli
+          soft_fail: false
+          skip_check: CKV_AWS_79,CKV_AWS_144,CKV2_AWS_5,CKV2_AWS_38
+          quiet: true
+          compact: true
+        continue-on-error: true
+
+      - name: Run Trivy IaC Scanner
+        id: trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'config'
+          scan-ref: 'terraform/'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH'
+        continue-on-error: true
+
+      - name: Upload Trivy results to GitHub Security
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+      - name: Security Scan Summary
+        if: steps.checkov.outcome == 'failure' || steps.trivy.outcome == 'failure'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '🔒 **Security Scan Findings**\n\nSecurity issues detected. Please review the security scan results in the Actions log.'
+            })
+
+  ###############################################################################
+  # Job 5: Terraform Plan
+  ###############################################################################
+  terraform-plan:
+    name: Terraform Plan
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    strategy:
+      fail-fast: false
+      matrix:
+        environment:
+          - dev/02-iam
+          - dev/03-eks-cluster
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+          terraform_wrapper: false
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/github-actions-terraform
+          aws-region: ${{ env.AWS_REGION }}
+          role-session-name: GitHubActions-Terraform-PR-${{ matrix.environment }}
+
+      - name: Cache Terraform providers
+        uses: actions/cache@v4
+        with:
+          path: terraform/environments/${{ matrix.environment }}/.terraform
+          key: ${{ runner.os }}-terraform-${{ matrix.environment }}-${{ hashFiles('terraform/environments/${{ matrix.environment }}/.terraform.lock.hcl') }}
+          restore-keys: |
+            ${{ runner.os }}-terraform-${{ matrix.environment }}-
+
+      - name: Terraform Init
+        run: |
+          cd terraform/environments/${{ matrix.environment }}
+          terraform init
+
+      - name: Terraform Plan
+        id: plan
+        run: |
+          cd terraform/environments/${{ matrix.environment }}
+          terraform plan -out=tfplan -no-color 2>&1 | tee plan.txt
+          terraform show -json tfplan > plan.json
+        continue-on-error: true
+
+      - name: Upload plan artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: terraform-plan-${{ matrix.environment }}
+          path: |
+            terraform/environments/${{ matrix.environment }}/tfplan
+            terraform/environments/${{ matrix.environment }}/plan.json
+            terraform/environments/${{ matrix.environment }}/plan.txt
+          retention-days: 5
+
+      - name: Create plan summary
+        id: plan-summary
+        run: |
+          cd terraform/environments/${{ matrix.environment }}
+
+          # Extract resource changes
+          PLAN_SUMMARY=$(terraform show tfplan | grep -A 100 "Plan:" | head -20 || echo "No changes")
+
+          # Save to environment for next step
+          echo "PLAN_SUMMARY<<EOF" >> $GITHUB_ENV
+          echo "$PLAN_SUMMARY" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+
+      - name: Comment plan on PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const envName = '${{ matrix.environment }}';
+            const planPath = `terraform/environments/${envName}/plan.txt`;
+
+            let planOutput = '';
+            try {
+              planOutput = fs.readFileSync(planPath, 'utf8');
+            } catch (err) {
+              planOutput = 'Unable to read plan output';
+            }
+
+            // Truncate if too long
+            const maxLength = 60000;
+            if (planOutput.length > maxLength) {
+              planOutput = planOutput.substring(0, maxLength) + '\n\n... (truncated)';
+            }
+
+            const output = `### Terraform Plan: \`${envName}\`
+
+            <details>
+            <summary>Show Plan</summary>
+
+            \`\`\`terraform
+            ${planOutput}
+            \`\`\`
+
+            </details>
+
+            **Plan Status:** ${{ steps.plan.outcome == 'success' && '✅ Success' || '❌ Failed' }}
+            `;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: output
+            });
+
+  ###############################################################################
+  # Job 6: Cost Estimation (Optional - Infracost)
+  ###############################################################################
+  cost-estimate:
+    name: Cost Estimation
+    runs-on: ubuntu-latest
+    needs: terraform-plan
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    strategy:
+      matrix:
+        environment:
+          - dev/02-iam
+          - dev/03-eks-cluster
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download plan artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: terraform-plan-${{ matrix.environment }}
+          path: terraform/environments/${{ matrix.environment }}/
+
+      - name: Setup Infracost
+        uses: infracost/actions/setup@v3
+        with:
+          api-key: ${{ secrets.INFRACOST_API_KEY }}
+        continue-on-error: true
+
+      - name: Generate Infracost breakdown
+        id: infracost
+        run: |
+          cd terraform/environments/${{ matrix.environment }}
+          infracost breakdown \
+            --path plan.json \
+            --format json \
+            --out-file infracost.json || echo "Infracost failed"
+        continue-on-error: true
+
+      - name: Comment cost estimate
+        if: steps.infracost.outcome == 'success'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const envName = '${{ matrix.environment }}';
+            const costPath = `terraform/environments/${envName}/infracost.json`;
+
+            try {
+              const costData = JSON.parse(fs.readFileSync(costPath, 'utf8'));
+              const monthlyCost = costData.totalMonthlyCost || 'N/A';
+
+              github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: `💰 **Cost Estimate: \`${envName}\`**\n\nEstimated monthly cost: **$${monthlyCost}**`
+              });
+            } catch (err) {
+              console.log('Unable to parse cost data');
+            }
+
+  ###############################################################################
+  # Job 7: PR Summary Comment
+  ###############################################################################
+  pr-summary:
+    name: PR Summary
+    runs-on: ubuntu-latest
+    needs: [terraform-fmt, terraform-validate, tflint, security-scan, terraform-plan]
+    if: always()
+    steps:
+      - name: Create or Update PR Comment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fmtStatus = '${{ needs.terraform-fmt.result }}';
+            const validateStatus = '${{ needs.terraform-validate.result }}';
+            const tflintStatus = '${{ needs.tflint.result }}';
+            const securityStatus = '${{ needs.security-scan.result }}';
+            const planStatus = '${{ needs.terraform-plan.result }}';
+
+            const statusIcon = (status) => {
+              if (status === 'success') return '✅';
+              if (status === 'failure') return '❌';
+              return '⚠️';
+            };
+
+            const body = `## Terraform PR Checks Summary
+
+            | Check | Status |
+            |-------|--------|
+            | Terraform Format | ${statusIcon(fmtStatus)} ${fmtStatus} |
+            | Terraform Validate | ${statusIcon(validateStatus)} ${validateStatus} |
+            | TFLint | ${statusIcon(tflintStatus)} ${tflintStatus} |
+            | Security Scan | ${statusIcon(securityStatus)} ${securityStatus} |
+            | Terraform Plan | ${statusIcon(planStatus)} ${planStatus} |
+
+            ---
+
+            **Detailed Results:**
+            - Check individual job logs for detailed output
+            - Plan details are in separate comments below
+            - Security findings uploaded to GitHub Security tab
+
+            **Next Steps:**
+            ${fmtStatus !== 'success' ? '- ❌ Fix formatting issues with `terraform fmt -recursive terraform/`\n' : ''}
+            ${validateStatus !== 'success' ? '- ❌ Fix validation errors\n' : ''}
+            ${tflintStatus !== 'success' ? '- ⚠️ Review TFLint warnings\n' : ''}
+            ${securityStatus !== 'success' ? '- ⚠️ Review security findings\n' : ''}
+            ${planStatus === 'success' ? '- ✅ Review plan output and merge when ready\n' : ''}
+            `;
+
+            // Find existing comment
+            const comments = await github.rest.issues.listComments({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+            });
+
+            const existingComment = comments.data.find(comment =>
+              comment.user.type === 'Bot' && comment.body.includes('Terraform PR Checks Summary')
+            );
+
+            if (existingComment) {
+              await github.rest.issues.updateComment({
+                comment_id: existingComment.id,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: body
+              });
+            } else {
+              await github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: body
+              });
+            }
