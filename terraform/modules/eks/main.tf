@@ -401,23 +401,27 @@ resource "aws_eks_addon" "kube_proxy" {
 }
 
 # EBS CSI Driver
+# Note: Service account role is configured separately to avoid circular dependency
 resource "aws_eks_addon" "ebs_csi" {
   cluster_name                = aws_eks_cluster.main.name
   addon_name                  = "aws-ebs-csi-driver"
   addon_version               = var.ebs_csi_version
-  service_account_role_arn    = var.ebs_csi_controller_role_arn
   resolve_conflicts_on_create = "OVERWRITE"
   resolve_conflicts_on_update = "PRESERVE"
 
   tags = var.tags
+
+  lifecycle {
+    ignore_changes = [service_account_role_arn]
+  }
 }
 
 # Amazon CloudWatch Observability (Container Insights)
+# Note: Service account role is configured separately to avoid circular dependency
 resource "aws_eks_addon" "cloudwatch_observability" {
   cluster_name                = aws_eks_cluster.main.name
   addon_name                  = "amazon-cloudwatch-observability"
   addon_version               = var.cloudwatch_observability_version
-  service_account_role_arn    = var.cloudwatch_agent_role_arn
   resolve_conflicts_on_create = "OVERWRITE"
   resolve_conflicts_on_update = "PRESERVE"
 
@@ -427,4 +431,8 @@ resource "aws_eks_addon" "cloudwatch_observability" {
     aws_eks_node_group.on_demand,
     aws_eks_node_group.spot
   ]
+
+  lifecycle {
+    ignore_changes = [service_account_role_arn]
+  }
 }

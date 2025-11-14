@@ -117,17 +117,6 @@ variable "cloudwatch_observability_version" {
   default     = null # Use latest
 }
 
-# IAM Role ARNs from IAM module
-variable "ebs_csi_controller_role_arn" {
-  description = "ARN of the EBS CSI controller IAM role"
-  type        = string
-}
-
-variable "cloudwatch_agent_role_arn" {
-  description = "ARN of the CloudWatch agent IAM role"
-  type        = string
-}
-
 variable "tags" {
   description = "Tags to apply to all resources"
   type        = map(string)

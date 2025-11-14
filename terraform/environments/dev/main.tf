@@ -76,13 +76,7 @@ module "eks" {
   spot_min_size       = 0
   spot_max_size       = 6
 
-  # IAM Roles for Add-ons
-  ebs_csi_controller_role_arn = module.iam.ebs_csi_controller_role_arn
-  cloudwatch_agent_role_arn   = module.iam.cloudwatch_agent_role_arn
-
   tags = local.tags
-
-  depends_on = [module.iam]
 }
 
 ################################################################################
