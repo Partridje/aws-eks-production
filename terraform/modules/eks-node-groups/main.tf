@@ -111,6 +111,16 @@ resource "aws_eks_node_group" "system" {
     create_before_destroy = true
     # Ignore desired_size changes made by Cluster Autoscaler
     ignore_changes = [scaling_config[0].desired_size]
+
+    # Validate scaling configuration
+    precondition {
+      condition     = var.system_max_size >= var.system_min_size
+      error_message = "system_max_size (${var.system_max_size}) must be >= system_min_size (${var.system_min_size})"
+    }
+    precondition {
+      condition     = var.system_desired_size >= var.system_min_size && var.system_desired_size <= var.system_max_size
+      error_message = "system_desired_size (${var.system_desired_size}) must be between system_min_size (${var.system_min_size}) and system_max_size (${var.system_max_size})"
+    }
   }
 
   # Ensure node role is ready before creating node group
@@ -178,6 +188,16 @@ resource "aws_eks_node_group" "app" {
     create_before_destroy = true
     # Ignore desired_size changes made by Cluster Autoscaler
     ignore_changes = [scaling_config[0].desired_size]
+
+    # Validate scaling configuration
+    precondition {
+      condition     = var.app_max_size >= var.app_min_size
+      error_message = "app_max_size (${var.app_max_size}) must be >= app_min_size (${var.app_min_size})"
+    }
+    precondition {
+      condition     = var.app_desired_size >= var.app_min_size && var.app_desired_size <= var.app_max_size
+      error_message = "app_desired_size (${var.app_desired_size}) must be between app_min_size (${var.app_min_size}) and app_max_size (${var.app_max_size})"
+    }
   }
 
   # Ensure node role is ready before creating node group

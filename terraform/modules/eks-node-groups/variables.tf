@@ -79,8 +79,8 @@ variable "system_max_size" {
   default     = 4
 
   validation {
-    condition     = var.system_max_size >= var.system_min_size
-    error_message = "Maximum size must be greater than or equal to minimum size."
+    condition     = var.system_max_size >= 2
+    error_message = "Maximum size must be at least 2 for high availability."
   }
 }
 
@@ -149,8 +149,8 @@ variable "app_max_size" {
   default     = 10
 
   validation {
-    condition     = var.app_max_size >= var.app_min_size
-    error_message = "Maximum size must be greater than or equal to minimum size."
+    condition     = var.app_max_size >= 1
+    error_message = "Maximum size must be at least 1."
   }
 }
 
