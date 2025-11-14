@@ -17,7 +17,7 @@ permissions:
   pull-requests: write
 
 env:
-  TF_VERSION: '1.5.0'
+  TF_VERSION: '1.13.5'
   AWS_REGION: 'eu-west-1'
 
 jobs:
@@ -46,8 +46,41 @@ jobs:
           cd terraform/environments/dev
           terraform validate
 
+  terraform-lint:
+    name: Lint & Best Practices
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Setup TFLint
+        uses: terraform-linters/setup-tflint@v4
+        with:
+          tflint_version: latest
+
+      - name: Run TFLint
+        run: |
+          cd terraform
+          tflint --init
+          tflint --recursive --format compact
+
+      - name: Generate Terraform Docs
+        uses: terraform-docs/gh-actions@v1.2.0
+        with:
+          working-dir: terraform/modules
+          output-file: README.md
+          output-method: inject
+          git-push: false
+          recursive: true
+          recursive-path: .
+
   terraform-security:
-    name: Security Scan
+    name: Security & Cost Analysis
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -66,10 +99,36 @@ jobs:
           framework: terraform
           soft_fail: true
 
+      - name: Setup Infracost
+        uses: infracost/actions/setup@v3
+        with:
+          api-key: ${{ secrets.INFRACOST_API_KEY }}
+
+      - name: Generate Infracost estimate
+        if: github.event_name == 'pull_request' && env.INFRACOST_API_KEY != ''
+        run: |
+          cd terraform/environments/dev
+          infracost breakdown --path . \
+            --format json \
+            --out-file /tmp/infracost.json || echo "Infracost skipped (API key not set)"
+        continue-on-error: true
+        env:
+          INFRACOST_API_KEY: ${{ secrets.INFRACOST_API_KEY }}
+
+      - name: Post Infracost comment
+        if: github.event_name == 'pull_request' && env.INFRACOST_API_KEY != ''
+        uses: infracost/actions/comment@v3
+        with:
+          path: /tmp/infracost.json
+          behavior: update
+        continue-on-error: true
+        env:
+          INFRACOST_API_KEY: ${{ secrets.INFRACOST_API_KEY }}
+
   terraform-plan:
     name: Plan
     runs-on: ubuntu-latest
-    needs: [terraform-validate, terraform-security]
+    needs: [terraform-validate, terraform-lint, terraform-security]
     if: github.event_name == 'pull_request'
     steps:
       - name: Checkout code
@@ -118,12 +177,11 @@ jobs:
               body: output
             })
 
-  terraform-apply:
-    name: Apply
+  terraform-plan-main:
+    name: Plan (Main Branch)
     runs-on: ubuntu-latest
-    needs: [terraform-validate, terraform-security]
+    needs: [terraform-validate, terraform-lint, terraform-security]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    environment: production
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -144,19 +202,128 @@ jobs:
           cd terraform/environments/dev
           terraform init
 
-      - name: Terraform Apply
+      - name: Terraform Plan
+        id: plan
         run: |
           cd terraform/environments/dev
-          terraform apply -auto-approve
+          terraform plan -no-color -out=tfplan
+
+      - name: Upload Plan
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfplan
+          path: terraform/environments/dev/tfplan
+          retention-days: 5
+
+      - name: Plan Summary
+        run: |
+          echo "📋 Terraform Plan completed" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Review the plan and approve the deployment in the Actions tab." >> $GITHUB_STEP_SUMMARY
+
+  terraform-apply:
+    name: Apply
+    runs-on: ubuntu-latest
+    needs: [terraform-plan-main]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    environment:
+      name: production
+      url: https://console.aws.amazon.com/eks/home?region=${{ env.AWS_REGION }}#/clusters
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/github-actions-role
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Terraform Init
+        run: |
+          cd terraform/environments/dev
+          terraform init
+
+      - name: Download Plan
+        uses: actions/download-artifact@v4
+        with:
+          name: tfplan
+          path: terraform/environments/dev
+
+      - name: Terraform Apply
+        id: apply
+        run: |
+          cd terraform/environments/dev
+          terraform apply tfplan
+        continue-on-error: true
 
       - name: Terraform Output
         id: output
+        if: steps.apply.outcome == 'success'
         run: |
           cd terraform/environments/dev
-          echo "::set-output name=cluster_name::$(terraform output -raw cluster_name)"
-          echo "::set-output name=cluster_endpoint::$(terraform output -raw cluster_endpoint)"
+          echo "cluster_name=$(terraform output -raw cluster_name)" >> $GITHUB_OUTPUT
+          echo "cluster_endpoint=$(terraform output -raw cluster_endpoint)" >> $GITHUB_OUTPUT
+
+      - name: Handle Apply Failure
+        if: steps.apply.outcome == 'failure'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const issueBody = `## ❌ Terraform Apply Failed
+
+            **Environment:** dev
+            **Commit:** \`${{ github.sha }}\`
+            **Workflow Run:** [View Details](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+            **Triggered by:** @${{ github.actor }}
+
+            ### What happened?
+            The Terraform apply step failed during deployment. The infrastructure may be in an inconsistent state.
+
+            ### Immediate Actions Required
+            1. Check the workflow logs for error details
+            2. Verify infrastructure state in AWS Console
+            3. Consider running a rollback if needed:
+               - Go to Actions → Terraform Rollback
+               - Select the environment and target commit
+               - Provide reason and execute
+
+            ### Rollback Command
+            To rollback to the previous working commit, use the manual rollback workflow with:
+            - **Environment:** dev
+            - **Target Commit:** Previous successful deployment
+            - **Reason:** Failed apply from commit ${{ github.sha }}
+
+            ---
+            *This issue was automatically created by the Terraform CI/CD workflow*
+            `;
+
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `❌ Terraform Apply Failed - dev environment`,
+              body: issueBody,
+              labels: ['terraform-failure', 'dev', 'infrastructure', 'urgent']
+            });
+
+      - name: Fail if Apply Failed
+        if: steps.apply.outcome == 'failure'
+        run: |
+          echo "❌ Terraform apply failed!" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "A GitHub issue has been created. Check workflow logs for details." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "To rollback, use the Terraform Rollback workflow." >> $GITHUB_STEP_SUMMARY
+          exit 1
 
       - name: Summary
+        if: steps.apply.outcome == 'success'
         run: |
           echo "✅ Infrastructure deployed successfully!" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
