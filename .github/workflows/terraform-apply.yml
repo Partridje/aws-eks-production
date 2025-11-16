@@ -108,7 +108,8 @@ jobs:
         run: |
           cd terraform/environments/${{ matrix.environment }}
           terraform plan -out=tfplan -no-color
-          terraform show -json tfplan > plan.json
+          # Save JSON plan for analysis (non-critical, continue on error)
+          terraform show -json tfplan > plan.json || echo "Warning: Could not generate JSON plan"
 
       - name: Terraform Apply
         id: apply
@@ -230,7 +231,8 @@ jobs:
         run: |
           cd terraform/environments/${{ matrix.environment }}
           terraform plan -out=tfplan -no-color
-          terraform show -json tfplan > plan.json
+          # Save JSON plan for analysis (non-critical, continue on error)
+          terraform show -json tfplan > plan.json || echo "Warning: Could not generate JSON plan"
 
       - name: Terraform Apply
         id: apply
