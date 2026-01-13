@@ -24,9 +24,9 @@ Our CI/CD pipeline uses GitHub Actions with AWS OIDC authentication to automate 
         ┌───────────────────────────────────────┐
         │   1. Create Feature Branch            │
         │   2. Make Changes                     │
-        │   3. Commit (Pre-commit Hooks)       │
-        │   4. Push (Pre-push Checks)          │
-        │   5. Create Pull Request             │
+        │   3. Commit (Pre-commit Hooks)        │
+        │   4. Push (Pre-push Checks)           │
+        │   5. Create Pull Request              │
         └───────────────────────────────────────┘
                             ↓
         ┌───────────────────────────────────────┐
@@ -34,10 +34,10 @@ Our CI/CD pipeline uses GitHub Actions with AWS OIDC authentication to automate 
         │  ✓ Format Check                       │
         │  ✓ Validation                         │
         │  ✓ TFLint                             │
-        │  ✓ Security Scan (Checkov/Trivy)     │
+        │  ✓ Security Scan (Checkov/Trivy)      │
         │  ✓ Terraform Plan                     │
-        │  ✓ Cost Estimate (optional)          │
-        │  ✓ PR Comment with Results           │
+        │  ✓ Cost Estimate (optional)           │
+        │  ✓ PR Comment with Results            │
         └───────────────────────────────────────┘
                             ↓
         ┌───────────────────────────────────────┐

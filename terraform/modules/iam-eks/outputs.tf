@@ -114,6 +114,30 @@ output "aws_load_balancer_controller_policy_name" {
 }
 
 ###############################################################################
+# IRSA Role Outputs
+###############################################################################
+
+output "vpc_cni_role_arn" {
+  description = "ARN of the VPC CNI IRSA role"
+  value       = var.use_vpc_cni_irsa && local.oidc_provider_url != "" ? aws_iam_role.vpc_cni[0].arn : null
+}
+
+output "vpc_cni_role_name" {
+  description = "Name of the VPC CNI IRSA role"
+  value       = var.use_vpc_cni_irsa && local.oidc_provider_url != "" ? aws_iam_role.vpc_cni[0].name : null
+}
+
+output "ebs_csi_driver_role_arn" {
+  description = "ARN of the EBS CSI Driver IRSA role"
+  value       = var.create_ebs_csi_policy && local.oidc_provider_url != "" ? aws_iam_role.ebs_csi_driver[0].arn : null
+}
+
+output "ebs_csi_driver_role_name" {
+  description = "Name of the EBS CSI Driver IRSA role"
+  value       = var.create_ebs_csi_policy && local.oidc_provider_url != "" ? aws_iam_role.ebs_csi_driver[0].name : null
+}
+
+###############################################################################
 # Summary Output
 ###############################################################################
 
@@ -125,5 +149,8 @@ output "iam_roles_summary" {
     node_instance_profile    = aws_iam_instance_profile.node.name
     oidc_provider_configured = var.create_oidc_provider && var.oidc_provider_url != ""
     ssm_access_enabled       = var.enable_ssm_access
+    vpc_cni_irsa_enabled     = var.use_vpc_cni_irsa
+    vpc_cni_role_arn         = var.use_vpc_cni_irsa && local.oidc_provider_url != "" ? aws_iam_role.vpc_cni[0].arn : null
+    ebs_csi_driver_role_arn  = var.create_ebs_csi_policy && local.oidc_provider_url != "" ? aws_iam_role.ebs_csi_driver[0].arn : null
   }
 }

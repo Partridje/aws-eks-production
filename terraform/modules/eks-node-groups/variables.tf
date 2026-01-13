@@ -166,6 +166,89 @@ variable "app_node_disk_size" {
 }
 
 ###############################################################################
+# Node Health and Repair Configuration
+###############################################################################
+
+variable "enable_node_repair" {
+  description = <<-EOT
+    Enable automatic node repair for unhealthy nodes.
+
+    When enabled, EKS will automatically detect and replace unhealthy nodes.
+    This is a new feature in AWS Provider 6.0+ that improves cluster reliability.
+
+    **Recommended:** Enable for production environments
+  EOT
+  type        = bool
+  default     = true
+}
+
+###############################################################################
+# AMI Configuration
+###############################################################################
+
+variable "system_ami_type" {
+  description = <<-EOT
+    AMI type for system node group.
+
+    Options:
+    - AL2_x86_64: Amazon Linux 2 (default for compatibility)
+    - AL2023_x86_64_STANDARD: Amazon Linux 2023 (recommended for new clusters)
+    - AL2_x86_64_GPU: Amazon Linux 2 with GPU support
+    - AL2023_x86_64_NVIDIA: Amazon Linux 2023 with NVIDIA GPU support
+    - AL2_ARM_64: Amazon Linux 2 ARM64
+    - AL2023_ARM_64_STANDARD: Amazon Linux 2023 ARM64
+
+    **Migration Note:** Changing from AL2 to AL2023 will recreate nodes.
+    Plan carefully for production environments.
+  EOT
+  type        = string
+  default     = "AL2_x86_64" # Conservative default for compatibility
+
+  validation {
+    condition = contains([
+      "AL2_x86_64",
+      "AL2023_x86_64_STANDARD",
+      "AL2_x86_64_GPU",
+      "AL2023_x86_64_NVIDIA",
+      "AL2_ARM_64",
+      "AL2023_ARM_64_STANDARD"
+    ], var.system_ami_type)
+    error_message = "AMI type must be a valid EKS AMI type."
+  }
+}
+
+variable "app_ami_type" {
+  description = <<-EOT
+    AMI type for application node group.
+
+    Options:
+    - AL2_x86_64: Amazon Linux 2 (default for compatibility)
+    - AL2023_x86_64_STANDARD: Amazon Linux 2023 (recommended for new clusters)
+    - AL2_x86_64_GPU: Amazon Linux 2 with GPU support
+    - AL2023_x86_64_NVIDIA: Amazon Linux 2023 with NVIDIA GPU support
+    - AL2_ARM_64: Amazon Linux 2 ARM64
+    - AL2023_ARM_64_STANDARD: Amazon Linux 2023 ARM64
+
+    **Migration Note:** Changing from AL2 to AL2023 will recreate nodes.
+    Plan carefully for production environments.
+  EOT
+  type        = string
+  default     = "AL2_x86_64" # Conservative default for compatibility
+
+  validation {
+    condition = contains([
+      "AL2_x86_64",
+      "AL2023_x86_64_STANDARD",
+      "AL2_x86_64_GPU",
+      "AL2023_x86_64_NVIDIA",
+      "AL2_ARM_64",
+      "AL2023_ARM_64_STANDARD"
+    ], var.app_ami_type)
+    error_message = "AMI type must be a valid EKS AMI type."
+  }
+}
+
+###############################################################################
 # Optional Configuration
 ###############################################################################
 

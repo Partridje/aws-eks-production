@@ -158,6 +158,36 @@ output "vpc_endpoints_security_group_id" {
   value       = var.enable_vpc_endpoints ? aws_security_group.vpc_endpoints[0].id : null
 }
 
+output "vpc_endpoint_eks_id" {
+  description = "ID of EKS VPC endpoint"
+  value       = var.enable_vpc_endpoints ? aws_vpc_endpoint.eks[0].id : null
+}
+
+output "vpc_endpoint_eks_auth_id" {
+  description = "ID of EKS Auth VPC endpoint (for Pod Identity)"
+  value       = var.enable_vpc_endpoints ? aws_vpc_endpoint.eks_auth[0].id : null
+}
+
+output "vpc_endpoint_elb_id" {
+  description = "ID of Elastic Load Balancing VPC endpoint"
+  value       = var.enable_vpc_endpoints ? aws_vpc_endpoint.elasticloadbalancing[0].id : null
+}
+
+output "vpc_endpoint_ssm_id" {
+  description = "ID of SSM VPC endpoint"
+  value       = var.enable_vpc_endpoints ? aws_vpc_endpoint.ssm[0].id : null
+}
+
+output "vpc_endpoint_ssm_messages_id" {
+  description = "ID of SSM Messages VPC endpoint"
+  value       = var.enable_vpc_endpoints ? aws_vpc_endpoint.ssm_messages[0].id : null
+}
+
+output "vpc_endpoint_ec2_messages_id" {
+  description = "ID of EC2 Messages VPC endpoint"
+  value       = var.enable_vpc_endpoints ? aws_vpc_endpoint.ec2_messages[0].id : null
+}
+
 ###############################################################################
 # Flow Logs Outputs
 ###############################################################################
