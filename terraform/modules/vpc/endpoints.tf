@@ -184,6 +184,150 @@ resource "aws_vpc_endpoint" "sts" {
 }
 
 ###############################################################################
+# EKS Interface Endpoint
+# Required for private EKS clusters to communicate with control plane
+###############################################################################
+
+resource "aws_vpc_endpoint" "eks" {
+  count = var.enable_vpc_endpoints ? 1 : 0
+
+  vpc_id              = aws_vpc.main.id
+  service_name        = "com.amazonaws.${data.aws_region.current.name}.eks"
+  vpc_endpoint_type   = "Interface"
+  subnet_ids          = aws_subnet.private[*].id
+  security_group_ids  = [aws_security_group.vpc_endpoints[0].id]
+  private_dns_enabled = true
+
+  tags = merge(
+    local.common_tags,
+    {
+      Name = "${var.project_name}-${var.environment}-eks-endpoint"
+      Type = "interface"
+    }
+  )
+}
+
+###############################################################################
+# EKS Auth Interface Endpoint
+# Required for EKS Pod Identity authentication
+###############################################################################
+
+resource "aws_vpc_endpoint" "eks_auth" {
+  count = var.enable_vpc_endpoints ? 1 : 0
+
+  vpc_id              = aws_vpc.main.id
+  service_name        = "com.amazonaws.${data.aws_region.current.name}.eks-auth"
+  vpc_endpoint_type   = "Interface"
+  subnet_ids          = aws_subnet.private[*].id
+  security_group_ids  = [aws_security_group.vpc_endpoints[0].id]
+  private_dns_enabled = true
+
+  tags = merge(
+    local.common_tags,
+    {
+      Name = "${var.project_name}-${var.environment}-eks-auth-endpoint"
+      Type = "interface"
+    }
+  )
+}
+
+###############################################################################
+# Elastic Load Balancing Interface Endpoint
+# Required for AWS Load Balancer Controller
+###############################################################################
+
+resource "aws_vpc_endpoint" "elasticloadbalancing" {
+  count = var.enable_vpc_endpoints ? 1 : 0
+
+  vpc_id              = aws_vpc.main.id
+  service_name        = "com.amazonaws.${data.aws_region.current.name}.elasticloadbalancing"
+  vpc_endpoint_type   = "Interface"
+  subnet_ids          = aws_subnet.private[*].id
+  security_group_ids  = [aws_security_group.vpc_endpoints[0].id]
+  private_dns_enabled = true
+
+  tags = merge(
+    local.common_tags,
+    {
+      Name = "${var.project_name}-${var.environment}-elb-endpoint"
+      Type = "interface"
+    }
+  )
+}
+
+###############################################################################
+# SSM Interface Endpoint
+# Required for Systems Manager and SSM Session Manager
+###############################################################################
+
+resource "aws_vpc_endpoint" "ssm" {
+  count = var.enable_vpc_endpoints ? 1 : 0
+
+  vpc_id              = aws_vpc.main.id
+  service_name        = "com.amazonaws.${data.aws_region.current.name}.ssm"
+  vpc_endpoint_type   = "Interface"
+  subnet_ids          = aws_subnet.private[*].id
+  security_group_ids  = [aws_security_group.vpc_endpoints[0].id]
+  private_dns_enabled = true
+
+  tags = merge(
+    local.common_tags,
+    {
+      Name = "${var.project_name}-${var.environment}-ssm-endpoint"
+      Type = "interface"
+    }
+  )
+}
+
+###############################################################################
+# SSM Messages Interface Endpoint
+# Required for SSM Session Manager
+###############################################################################
+
+resource "aws_vpc_endpoint" "ssm_messages" {
+  count = var.enable_vpc_endpoints ? 1 : 0
+
+  vpc_id              = aws_vpc.main.id
+  service_name        = "com.amazonaws.${data.aws_region.current.name}.ssmmessages"
+  vpc_endpoint_type   = "Interface"
+  subnet_ids          = aws_subnet.private[*].id
+  security_group_ids  = [aws_security_group.vpc_endpoints[0].id]
+  private_dns_enabled = true
+
+  tags = merge(
+    local.common_tags,
+    {
+      Name = "${var.project_name}-${var.environment}-ssm-messages-endpoint"
+      Type = "interface"
+    }
+  )
+}
+
+###############################################################################
+# EC2 Messages Interface Endpoint
+# Required for SSM Session Manager
+###############################################################################
+
+resource "aws_vpc_endpoint" "ec2_messages" {
+  count = var.enable_vpc_endpoints ? 1 : 0
+
+  vpc_id              = aws_vpc.main.id
+  service_name        = "com.amazonaws.${data.aws_region.current.name}.ec2messages"
+  vpc_endpoint_type   = "Interface"
+  subnet_ids          = aws_subnet.private[*].id
+  security_group_ids  = [aws_security_group.vpc_endpoints[0].id]
+  private_dns_enabled = true
+
+  tags = merge(
+    local.common_tags,
+    {
+      Name = "${var.project_name}-${var.environment}-ec2-messages-endpoint"
+      Type = "interface"
+    }
+  )
+}
+
+###############################################################################
 # Data Source for Current Region
 ###############################################################################
 

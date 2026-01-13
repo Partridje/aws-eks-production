@@ -29,8 +29,7 @@ resource "aws_iam_openid_connect_provider" "cluster" {
 ###############################################################################
 
 locals {
-  # OIDC provider ARN
-  oidc_provider_arn = aws_iam_openid_connect_provider.cluster.arn
+
 
   # OIDC provider URL without https:// (for use in IAM trust policies)
   oidc_provider_url_stripped = replace(aws_eks_cluster.main.identity[0].oidc[0].issuer, "https://", "")

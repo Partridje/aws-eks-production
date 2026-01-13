@@ -64,6 +64,12 @@ variable "enable_ssm_access" {
   default     = true
 }
 
+variable "use_vpc_cni_irsa" {
+  description = "Use IRSA for VPC CNI instead of node role policy (recommended for production)"
+  type        = bool
+  default     = true
+}
+
 ###############################################################################
 # IRSA Policy Creation Flags
 ###############################################################################

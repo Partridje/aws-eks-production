@@ -41,8 +41,11 @@ resource "aws_iam_role_policy_attachment" "node_AmazonEKSWorkerNodePolicy" {
   role       = aws_iam_role.node.name
 }
 
-# CNI policy for pod networking
+# CNI policy for pod networking (only when NOT using IRSA for CNI)
+# When using IRSA, the CNI policy should be attached to the VPC CNI IRSA role instead
 resource "aws_iam_role_policy_attachment" "node_AmazonEKS_CNI_Policy" {
+  count = var.use_vpc_cni_irsa ? 0 : 1
+
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"
   role       = aws_iam_role.node.name
 }

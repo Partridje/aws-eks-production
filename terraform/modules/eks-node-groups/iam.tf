@@ -59,11 +59,7 @@ locals {
   oidc_provider_url_stripped = replace(var.oidc_provider_url, "https://", "")
 
   # Common IRSA condition for aud (audience)
-  irsa_aud_condition = {
-    test     = "StringEquals"
-    variable = "${local.oidc_provider_url_stripped}:aud"
-    values   = ["sts.amazonaws.com"]
-  }
+
 }
 
 ###############################################################################

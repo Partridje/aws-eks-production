@@ -28,6 +28,12 @@ repos:
         args:
           - --args=--config=__GIT_WORKING_DIR__/.tflint.hcl
 
+      - id: terraform_tfsec
+        name: Terraform tfsec
+        description: Security static analysis of Terraform templates
+        args:
+          - --args=--config-file=__GIT_WORKING_DIR__/.tfsec.yml
+
       - id: terraform_trivy
         name: Terraform trivy
         description: Static analysis of Terraform templates for security issues

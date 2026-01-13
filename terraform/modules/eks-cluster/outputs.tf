@@ -108,21 +108,43 @@ output "cluster_status" {
 }
 
 ###############################################################################
+# Access Entries
+###############################################################################
+
+output "authentication_mode" {
+  description = "The authentication mode of the EKS cluster"
+  value       = var.authentication_mode
+}
+
+output "access_entries" {
+  description = "Map of created access entries"
+  value = {
+    for k, v in aws_eks_access_entry.this : k => {
+      principal_arn = v.principal_arn
+      type          = v.type
+      arn           = v.access_entry_arn
+    }
+  }
+}
+
+###############################################################################
 # Summary
 ###############################################################################
 
 output "cluster_summary" {
   description = "Summary of EKS cluster configuration"
   value = {
-    name               = aws_eks_cluster.main.id
-    version            = aws_eks_cluster.main.version
-    endpoint           = aws_eks_cluster.main.endpoint
-    status             = aws_eks_cluster.main.status
-    oidc_issuer        = aws_eks_cluster.main.identity[0].oidc[0].issuer
-    private_access     = aws_eks_cluster.main.vpc_config[0].endpoint_private_access
-    public_access      = aws_eks_cluster.main.vpc_config[0].endpoint_public_access
-    encryption_enabled = true
-    logging_enabled    = length(var.enabled_log_types) > 0
-    kms_key            = aws_kms_key.eks.arn
+    name                = aws_eks_cluster.main.id
+    version             = aws_eks_cluster.main.version
+    endpoint            = aws_eks_cluster.main.endpoint
+    status              = aws_eks_cluster.main.status
+    oidc_issuer         = aws_eks_cluster.main.identity[0].oidc[0].issuer
+    private_access      = aws_eks_cluster.main.vpc_config[0].endpoint_private_access
+    public_access       = aws_eks_cluster.main.vpc_config[0].endpoint_public_access
+    encryption_enabled  = true
+    logging_enabled     = length(var.enabled_log_types) > 0
+    kms_key             = aws_kms_key.eks.arn
+    authentication_mode = var.authentication_mode
+    access_entries      = length(var.access_entries)
   }
 }

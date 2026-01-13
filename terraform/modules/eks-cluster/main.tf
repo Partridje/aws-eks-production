@@ -9,7 +9,7 @@ terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "~> 5.0"
+      version = "~> 6.0"
     }
     tls = {
       source  = "hashicorp/tls"
@@ -70,8 +70,20 @@ resource "aws_eks_cluster" "main" {
     resources = ["secrets"]
   }
 
+  # Upgrade Policy (AWS Provider 6.0+)
+  # Defines the support tier for cluster upgrades
+  upgrade_policy {
+    support_type = var.upgrade_policy_support_type
+  }
+
   # Control Plane Logging
   enabled_cluster_log_types = var.enabled_log_types
+
+  # Access Configuration (API-based access management)
+  access_config {
+    authentication_mode                         = var.authentication_mode
+    bootstrap_cluster_creator_admin_permissions = true
+  }
 
   # Ensure CloudWatch log group is created first
   depends_on = [

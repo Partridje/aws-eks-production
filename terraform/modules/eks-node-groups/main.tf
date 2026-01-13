@@ -12,7 +12,7 @@ terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "~> 5.0"
+      version = "~> 6.0"
     }
   }
 }
@@ -21,18 +21,14 @@ terraform {
 # Data Sources
 ###############################################################################
 
-data "aws_caller_identity" "current" {}
-data "aws_region" "current" {}
-data "aws_partition" "current" {}
+
 
 ###############################################################################
 # Local Variables
 ###############################################################################
 
 locals {
-  account_id = data.aws_caller_identity.current.account_id
-  region     = data.aws_region.current.name
-  partition  = data.aws_partition.current.partition
+
 
   common_tags = merge(
     var.tags,
@@ -71,6 +67,17 @@ resource "aws_eks_node_group" "system" {
     max_unavailable_percentage = 33 # Allow 1/3 nodes to be unavailable during updates
   }
 
+  # Node Repair Configuration (AWS Provider 6.0+)
+  # Automatically detects and replaces unhealthy nodes
+  # Node Repair Configuration (AWS Provider 6.0+)
+  # Automatically detects and replaces unhealthy nodes
+  dynamic "node_repair_config" {
+    for_each = var.enable_node_repair ? [1] : []
+    content {
+      enabled = true
+    }
+  }
+
   # Launch Template
   launch_template {
     id      = aws_launch_template.system.id
@@ -80,6 +87,7 @@ resource "aws_eks_node_group" "system" {
   # Instance Configuration
   instance_types = var.system_instance_types
   capacity_type  = "ON_DEMAND" # Always use On-Demand for system nodes
+  ami_type       = var.system_ami_type
 
   # Kubernetes Labels
   labels = {
@@ -154,6 +162,17 @@ resource "aws_eks_node_group" "app" {
     max_unavailable_percentage = 33 # Allow 1/3 nodes to be unavailable during updates
   }
 
+  # Node Repair Configuration (AWS Provider 6.0+)
+  # Automatically detects and replaces unhealthy nodes
+  # Node Repair Configuration (AWS Provider 6.0+)
+  # Automatically detects and replaces unhealthy nodes
+  dynamic "node_repair_config" {
+    for_each = var.enable_node_repair ? [1] : []
+    content {
+      enabled = true
+    }
+  }
+
   # Launch Template
   launch_template {
     id      = aws_launch_template.app.id
@@ -163,6 +182,7 @@ resource "aws_eks_node_group" "app" {
   # Instance Configuration
   instance_types = var.app_instance_types
   capacity_type  = var.app_capacity_type # ON_DEMAND or SPOT
+  ami_type       = var.app_ami_type
 
   # Kubernetes Labels
   labels = {
