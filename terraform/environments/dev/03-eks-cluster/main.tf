@@ -37,14 +37,14 @@ provider "aws" {
 # Data Sources
 ###############################################################################
 
-data "aws_caller_identity" "current" {}
+
 
 ###############################################################################
 # Local Variables
 ###############################################################################
 
 locals {
-  account_id   = data.aws_caller_identity.current.account_id
+
   cluster_name = "${var.project_name}-${var.environment}-eks"
 
   common_tags = {

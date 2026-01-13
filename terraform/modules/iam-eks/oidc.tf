@@ -32,11 +32,7 @@ resource "aws_iam_openid_connect_provider" "cluster" {
 ###############################################################################
 
 # Use this when OIDC provider already exists
-data "aws_iam_openid_connect_provider" "cluster" {
-  count = var.create_oidc_provider ? 0 : 1
 
-  arn = var.oidc_provider_arn
-}
 
 ###############################################################################
 # Locals for OIDC provider ARN and URL

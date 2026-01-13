@@ -26,10 +26,7 @@ variable "private_subnet_ids" {
   }
 }
 
-variable "oidc_provider_arn" {
-  description = "ARN of the OIDC provider for the EKS cluster (for IRSA)"
-  type        = string
-}
+
 
 variable "oidc_provider_url" {
   description = "URL of the OIDC provider for the EKS cluster (for IRSA)"

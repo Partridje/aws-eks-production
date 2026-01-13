@@ -8,8 +8,8 @@ module "eks_node_groups" {
   cluster_name       = local.cluster_name
   node_role_arn      = module.iam_eks.node_role_arn
   private_subnet_ids = module.vpc.private_subnet_ids
-  oidc_provider_arn  = module.iam_eks.oidc_provider_arn
-  oidc_provider_url  = module.iam_eks.oidc_provider_url
+
+  oidc_provider_url = module.iam_eks.oidc_provider_url
 
   # System Node Group
   system_instance_types = ["t3.medium"]

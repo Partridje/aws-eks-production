@@ -35,14 +35,14 @@ provider "aws" {
 # Data Sources
 ###############################################################################
 
-data "aws_caller_identity" "current" {}
+
 
 ###############################################################################
 # Local Variables
 ###############################################################################
 
 locals {
-  account_id   = data.aws_caller_identity.current.account_id
+
   cluster_name = "${var.project_name}-${var.environment}-eks"
 
   common_tags = {
@@ -64,8 +64,8 @@ module "node_groups" {
   cluster_name       = local.cluster_name
   node_role_arn      = data.terraform_remote_state.iam.outputs.node_role_arn
   private_subnet_ids = data.terraform_remote_state.vpc.outputs.private_subnet_ids
-  oidc_provider_arn  = data.terraform_remote_state.eks.outputs.oidc_provider_arn
-  oidc_provider_url  = data.terraform_remote_state.eks.outputs.oidc_provider_url
+
+  oidc_provider_url = data.terraform_remote_state.eks.outputs.oidc_provider_url
 
   # System Node Group Configuration
   system_instance_types = var.system_instance_types
